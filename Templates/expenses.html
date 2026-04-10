@@ -291,7 +291,7 @@
         backdrop.addEventListener('click', toggleMenu);
         loanToggle.addEventListener('change', setLoanFieldVisibility);
         historyBtn.addEventListener('click', () => {
-            window.location.href = '/expense_history';
+            window.location.href = "{{ url_for('expense_history_page') }}";
         });
     </script>
 </body>

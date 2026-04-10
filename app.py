@@ -523,15 +523,11 @@ def logout():
 
 @app.route('/my_expenses')
 def my_expenses():
-    if not session.get("user_id"):
-        return redirect(url_for('home'))
     return render_template('expenses.html')
 
 
 @app.route('/expense_history')
 def expense_history_page():
-    if not session.get("user_id"):
-        return redirect(url_for('home'))
     return render_template('expense_history.html')
 
 @app.route('/analysis')
@@ -665,14 +661,12 @@ def spend_data():
 
 @app.route("/api/expense_history")
 def expense_history():
-    if not session.get("user_id"):
-        return jsonify({"success": False, "message": "Not logged in."}), 401
-
-    user_name = session.get("user_name")
+    user_name = session.get("user_name") or "guest"
     expenses, storage = get_expense_history_for_user(user_name, limit=100)
     return jsonify(
         {
             "success": True,
+            "user_name": user_name,
             "storage": storage,
             "count": len(expenses),
             "expenses": expenses,

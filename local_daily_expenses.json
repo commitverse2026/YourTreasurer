@@ -1,74 +1,50 @@
 [
   {
     "category": "Junk Food",
-    "amount": 125.0,
+    "amount": 100.0,
+    "spent_at": "ice creme",
     "is_loan": false,
     "friend_email": null,
     "relationship": null,
-    "created_at": "2026-04-10T07:16:54.274747",
-    "created_by": "Expense Tester",
-    "_id": "95c86809-9c54-45e0-b57a-180018518b63"
-  },
-  {
-    "category": "Lifestyle",
-    "amount": 300.0,
-    "is_loan": true,
-    "friend_email": "friend@example.com",
-    "relationship": "Classmate",
-    "created_at": "2026-04-10T07:16:54.279388",
-    "created_by": "Expense Tester",
-    "_id": "16923e7c-7dd8-4cff-8d2b-6aecb3be61c4"
+    "created_at": "2026-04-10T09:16:02.221231",
+    "created_by": "guest",
+    "username": "guest",
+    "_id": "e6060101-89d3-43ea-93ed-132132be1585"
   },
   {
     "category": "Educational",
-    "amount": 25000.0,
+    "amount": 100000.0,
+    "spent_at": "Studies",
     "is_loan": false,
     "friend_email": null,
     "relationship": null,
-    "created_at": "2026-04-10T07:18:34.324208",
-    "created_by": "Durvesh",
-    "_id": "658b7f50-826a-4b04-9966-acddced3a9dc"
+    "created_at": "2026-04-10T09:16:13.439976",
+    "created_by": "guest",
+    "username": "guest",
+    "_id": "2c879aa1-8538-40d4-a89c-2b5dba656f19"
+  },
+  {
+    "category": "Travelling",
+    "amount": 20000.0,
+    "spent_at": "cab",
+    "is_loan": false,
+    "friend_email": null,
+    "relationship": null,
+    "created_at": "2026-04-10T09:16:31.730514",
+    "created_by": "guest",
+    "username": "guest",
+    "_id": "4f5cf4a1-5df0-4cae-996c-dd495a914367"
   },
   {
     "category": "Lifestyle",
-    "amount": 1000.0,
+    "amount": 2000.0,
+    "spent_at": "clothes",
     "is_loan": false,
     "friend_email": null,
     "relationship": null,
-    "created_at": "2026-04-10T07:18:57.463751",
-    "created_by": "Durvesh",
-    "_id": "76ab44e1-0a68-45ca-b292-df6390d8418f"
-  },
-  {
-    "category": "Other",
-    "amount": 100000.0,
-    "is_loan": true,
-    "friend_email": "asmi.sutar@cumminscollege.in",
-    "relationship": "friend",
-    "created_at": "2026-04-10T07:19:22.839735",
-    "created_by": "Durvesh",
-    "_id": "f66e65b6-a749-4dcd-992f-c23e6e28ea6a"
-  },
-  {
-    "category": "Junk Food",
-    "amount": 99.0,
-    "is_loan": false,
-    "friend_email": null,
-    "relationship": null,
-    "created_at": "2026-04-10T07:22:03.918386",
+    "created_at": "2026-04-10T09:16:43.671049",
     "created_by": "guest",
-    "_id": "ec346a90-50a0-4a93-96dc-316e13a59693"
-  },
-  {
-    "category": "Junk Food",
-    "amount": 100.0,
-    "spent_at": "Cafe",
-    "is_loan": false,
-    "friend_email": null,
-    "relationship": null,
-    "created_at": "2026-04-10T08:48:52.247950",
-    "created_by": "History User",
-    "username": "History User",
-    "_id": "343c3274-19ba-4173-ba3b-870dee13b501"
+    "username": "guest",
+    "_id": "ab31bd06-5981-40a9-856a-7cf102349926"
   }
 ]

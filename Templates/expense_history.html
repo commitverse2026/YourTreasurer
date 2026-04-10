@@ -224,14 +224,14 @@
             statusNode.className = 'status';
             statusNode.textContent = 'Fetching latest records...';
             try {
-                const response = await fetch('/api/expense_history');
+                const response = await fetch("{{ url_for('expense_history') }}");
                 const data = await response.json();
                 if (!response.ok || !data.success) {
                     statusNode.className = 'status error';
                     statusNode.textContent = data.message || 'Failed to load history.';
                     return;
                 }
-                metaNode.textContent = `Showing ${data.count} record(s). Source: ${data.storage}. Auto-refresh: 30s`;
+                metaNode.textContent = `Showing ${data.count} record(s) for ${data.user_name || 'guest'}. Source: ${data.storage}. Auto-refresh: 30s`;
                 renderHistory(data.expenses || []);
                 statusNode.textContent = `Updated at ${new Date().toLocaleTimeString()}`;
             } catch (error) {
@@ -244,7 +244,7 @@
         closeBtn.addEventListener('click', toggleMenu);
         backdrop.addEventListener('click', toggleMenu);
         refreshBtn.addEventListener('click', fetchHistory);
-        backBtn.addEventListener('click', () => window.location.href = '/my_expenses');
+        backBtn.addEventListener('click', () => window.location.href = "{{ url_for('my_expenses') }}");
 
         fetchHistory();
         setInterval(fetchHistory, 30000);
