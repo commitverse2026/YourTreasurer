@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, flash, redirect, url_for, jso
 from flask_pymongo import PyMongo
 from flask_mail import Mail, Message
 from werkzeug.utils import secure_filename
+from bson.objectid import ObjectId
 import os
 import uuid 
 import threading
@@ -126,6 +127,64 @@ def add_interval_spend():
     except Exception as e:
         return "Internal Error", 500
 
+# --- FEATURE 15: MONEY RETURN CELEBRATION ---
+
+@app.route('/mark_loan_returned', methods=['POST'])
+def mark_loan_returned():
+    """
+    Feature 15: Mark a loan as returned.
+    1. Update loan status to 'returned' in database
+    2. Add a negative entry in daily_expenses to decrease total_spent
+    3. Return confetti trigger signal to frontend
+    """
+    try:
+        data = request.get_json()
+        loan_id = data.get('loan_id')
+        username = data.get('username')
+        loan_amount = float(data.get('loan_amount', 0))
+        friend_name = data.get('friend_name', 'Friend')
+        
+        if not loan_id or not username:
+            return jsonify({'success': False, 'message': 'Missing loan_id or username'}), 400
+        
+        # 1. Update loan status in the loans collection
+        try:
+            mongo.db.friend_loans.update_one(
+                {'_id': ObjectId(loan_id)},
+                {'$set': {'status': 'returned', 'returned_date': datetime.now()}}
+            )
+        except Exception as e:
+            print(f"Loans Update Error: {e}")
+            return jsonify({'success': False, 'message': 'Failed to update loan status'}), 500
+        
+        # 2. Add negative entry in daily_expenses to reverse the impact on Progress Bar
+        try:
+            negative_entry = {
+                'username': username,
+                'category': 'Loan Return',
+                'amount': -loan_amount,  # Negative amount
+                'description': f'Money returned to {friend_name}',
+                'date': datetime.now(),
+                'is_loan_return': True,
+                'original_loan_id': loan_id
+            }
+            mongo.db.daily_expenses.insert_one(negative_entry)
+        except Exception as e:
+            print(f"Negative Entry Insert Error: {e}")
+            return jsonify({'success': False, 'message': 'Failed to record return'}), 500
+        
+        # 3. Return success with confetti trigger
+        return jsonify({
+            'success': True,
+            'message': f'Loan of ${loan_amount} from {friend_name} marked as returned!',
+            'trigger_confetti': True,
+            'trigger_sound': 'ka-ching'
+        }), 200
+        
+    except Exception as e:
+        print(f"Mark Loan Returned Error: {e}")
+        return jsonify({'success': False, 'message': str(e)}), 500
+
 # --- API ROUTES (FOR REAL-TIME CHARTS) ---
 
 @app.route('/api/spend_data')
@@ -139,6 +198,66 @@ def spend_data():
         "amounts": [1200, 500, 800, 300, 5000, 450]
     }
     return jsonify(dummy_data)
+
+# --- FEATURE 15 API ENDPOINTS ---
+
+@app.route('/api/loans')
+def get_loans():
+    """
+    Fetch all loans or filter by status.
+    Query param: ?status=pending or ?status=returned
+    """
+    try:
+        username = request.args.get('username')
+        status = request.args.get('status')  # Optional filter
+        
+        # TODO: Get username from session if not provided
+        # For now, we'll provide a sample implementation
+        
+        query = {}
+        if status:
+            query['status'] = status
+        
+        loans = list(mongo.db.friend_loans.find(query))
+        
+        # Convert ObjectId to string for JSON serialization
+        for loan in loans:
+            loan['_id'] = str(loan['_id'])
+            if isinstance(loan.get('date'), datetime):
+                loan['date'] = loan['date'].isoformat()
+        
+        return jsonify(loans), 200
+    except Exception as e:
+        print(f"Get Loans API Error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/expenses')
+def get_expenses():
+    """
+    Fetch all expenses or filter by username.
+    """
+    try:
+        username = request.args.get('username')
+        
+        # TODO: Get username from session if not provided
+        
+        query = {}
+        if username:
+            query['username'] = username
+        
+        expenses = list(mongo.db.daily_expenses.find(query).sort('date', -1))
+        
+        # Convert ObjectId to string for JSON serialization
+        for expense in expenses:
+            expense['_id'] = str(expense['_id'])
+            if isinstance(expense.get('date'), datetime):
+                expense['date'] = expense['date'].isoformat()
+        
+        return jsonify(expenses), 200
+    except Exception as e:
+        print(f"Get Expenses API Error: {e}")
+        return jsonify({'error': str(e)}), 500
 
 
 @app.errorhandler(413)

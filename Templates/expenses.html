@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YourTreasurer | My Expenses</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
+    <!-- Canvas Confetti Library -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
+    <style>
+        .expenses-container {
+            max-width: 1000px;
+            margin: 40px auto;
+            padding: 20px;
+        }
+
+        .expenses-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .tab-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .tab-btn {
+            padding: 10px 20px;
+            border: 2px solid #6366f1;
+            background: transparent;
+            color: #6366f1;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .tab-btn.active {
+            background: #6366f1;
+            color: white;
+        }
+
+        .tab-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+        }
+
+        .loans-section,
+        .expenses-section {
+            display: none;
+        }
+
+        .loans-section.active,
+        .expenses-section.active {
+            display: block;
+        }
+
+        .loan-card,
+        .expense-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            animation: slideInFromBottom 0.5s ease-out;
+            transition: all 0.3s ease;
+        }
+
+        .loan-card:hover,
+        .expense-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 40px rgba(99, 102, 241, 0.2);
+        }
+
+        @keyframes slideInFromBottom {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .card-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .card-amount {
+            font-size: 24px;
+            font-weight: 800;
+            color: #6366f1;
+            background: rgba(99, 102, 241, 0.1);
+            padding: 8px 12px;
+            border-radius: 8px;
+        }
+
+        .card-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .detail-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .detail-label {
+            font-size: 12px;
+            color: #aaa;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 5px;
+        }
+
+        .detail-value {
+            font-size: 14px;
+            color: #fff;
+            font-weight: 600;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .status-pending {
+            background: #fbbf24;
+            color: #000;
+        }
+
+        .status-returned {
+            background: #10b981;
+            color: #fff;
+        }
+
+        .card-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .btn-mark-returned {
+            padding: 10px 20px;
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-mark-returned:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(16, 185, 129, 0.4);
+        }
+
+        .btn-mark-returned:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-delete {
+            padding: 10px 20px;
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn-delete:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(239, 68, 68, 0.4);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #aaa;
+        }
+
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 20px;
+        }
+
+        .lent-badge {
+            display: inline-block;
+            background: #6366f1;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-top: 3px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .laned-to-badge {
+            background: #6366f1;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-top: 10px;
+            display: inline-block;
+        }
+    </style>
+</head>
+<body>
+    <div class="brand-logo-top">
+        <img src="{{ url_for('static', filename='images/logo.png') }}" alt="YourTreasurer Logo">
+    </div>
+
+    <button class="menu-trigger" id="menu-btn">
+        <span>☰ Menu</span>
+    </button>
+
+    <div class="menu-backdrop" id="menu-backdrop"></div>
+
+    <nav id="side-nav" class="side-nav">
+        <button class="close-btn" id="close-btn">&times;</button>
+        <div class="nav-links">
+            <a href="/" data-bg="{{ url_for('static', filename='images/bg.svg') }}">Home</a>
+            <a href="/my_profile" data-bg="{{ url_for('static', filename='images/profile.jpg') }}">My Profile</a>
+            <a href="/my_expenses" data-bg="{{ url_for('static', filename='images/expenses.avif') }}">My Expenses</a>
+            <a href="/analysis" data-bg="{{ url_for('static', filename='images/Analysis.jpg') }}">Analysis</a>
+            <a href="/interval_spend" data-bg="{{ url_for('static', filename='images/interval.jpg') }}">Interval Spend</a>
+            <a href="/about_us" data-bg="{{ url_for('static', filename='images/aboutus.png') }}">About Us</a>
+        </div>
+    </nav>
+
+    <div id="dynamic-bg" class="dynamic-bg" style="background-image: url('{{ url_for('static', filename='images/expenses.avif') }}');"></div>
+    <div id="hover-bg" class="dynamic-bg hover-layer"></div>
+
+    <div class="main-layout-wrapper">
+        <div class="expenses-container">
+            <h1 class="title">My Expenses & Loans</h1>
+            <p class="subtitle">Track your spending and manage loan returns</p>
+
+            <div class="tab-buttons">
+                <button class="tab-btn active" id="tab-loans">💰 Active Loans</button>
+                <button class="tab-btn" id="tab-all-loans">📋 All Loans</button>
+                <button class="tab-btn" id="tab-expenses">📊 All Expenses</button>
+            </div>
+
+            <!-- LOANS SECTION (ACTIVE ONLY) -->
+            <div class="loans-section active" id="loans-section">
+                <div id="active-loans-list">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">🔄</div>
+                        <p>Loading your active loans...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ALL LOANS SECTION -->
+            <div class="loans-section" id="all-loans-section">
+                <div id="all-loans-list">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📬</div>
+                        <p>Loading all loans...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- EXPENSES SECTION -->
+            <div class="expenses-section" id="expenses-section">
+                <div id="expenses-list">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📈</div>
+                        <p>Loading your expenses...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="common-footer">
+        YourTreasurer &copy; 2026 | Track Your Money
+    </footer>
+
+    <!-- Audio for Ka-ching sound -->
+    <audio id="ka-ching-sound" preload="auto">
+        <source src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" type="audio/mpeg">
+    </audio>
+
+    <script>
+        const menuBtn = document.getElementById('menu-btn');
+        const closeBtn = document.getElementById('close-btn');
+        const sideNav = document.getElementById('side-nav');
+        const backdrop = document.getElementById('menu-backdrop');
+        const mainBg = document.getElementById('dynamic-bg');
+        const hoverBg = document.getElementById('hover-bg');
+        const navLinks = document.querySelectorAll('.nav-links a');
+
+        // Set default background
+        mainBg.style.backgroundImage = `url('{{ url_for('static', filename='images/expenses.avif') }}')`;
+
+        function toggleMenu() {
+            sideNav.classList.toggle('open');
+            backdrop.classList.toggle('active');
+            if (sideNav.classList.contains('open')) {
+                document.body.style.position = 'fixed';
+                document.body.style.width = '100%';
+            } else {
+                document.body.style.position = '';
+                hoverBg.style.opacity = '0';
+            }
+        }
+
+        // Hover Animation Logic
+        navLinks.forEach(link => {
+            link.addEventListener('mouseenter', () => {
+                const newImg = link.getAttribute('data-bg');
+                hoverBg.style.backgroundImage = `url(${newImg})`;
+                hoverBg.style.opacity = '1';
+            });
+
+            link.addEventListener('mouseleave', () => {
+                hoverBg.style.opacity = '0';
+            });
+        });
+
+        menuBtn.addEventListener('click', toggleMenu);
+        closeBtn.addEventListener('click', toggleMenu);
+        backdrop.addEventListener('click', toggleMenu);
+
+        // --- TAB SWITCHING LOGIC ---
+        const tabBtns = document.querySelectorAll('.tab-btn');
+        const tabSections = document.querySelectorAll('.loans-section, .expenses-section');
+
+        let currentTab = 0; // 0 = active loans, 1 = all loans, 2 = expenses
+
+        tabBtns.forEach((btn, idx) => {
+            btn.addEventListener('click', () => {
+                tabBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                
+                tabSections.forEach(section => section.classList.remove('active'));
+                tabSections[idx].classList.add('active');
+                currentTab = idx;
+
+                if (idx === 0) {
+                    loadActiveLoans();
+                } else if (idx === 1) {
+                    loadAllLoans();
+                } else if (idx === 2) {
+                    loadExpenses();
+                }
+            });
+        });
+
+        // --- LOAD DATA FUNCTIONS ---
+        async function loadActiveLoans() {
+            try {
+                const response = await fetch('/api/loans?status=pending');
+                const loans = await response.json();
+                displayLoans(loans, 'active-loans-list', true);
+            } catch (error) {
+                console.error('Error loading active loans:', error);
+                document.getElementById('active-loans-list').innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">❌</div>
+                        <p>Error loading loans. Please try again.</p>
+                    </div>
+                `;
+            }
+        }
+
+        async function loadAllLoans() {
+            try {
+                const response = await fetch('/api/loans');
+                const loans = await response.json();
+                displayLoans(loans, 'all-loans-list', false);
+            } catch (error) {
+                console.error('Error loading all loans:', error);
+                document.getElementById('all-loans-list').innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">❌</div>
+                        <p>Error loading loans. Please try again.</p>
+                    </div>
+                `;
+            }
+        }
+
+        async function loadExpenses() {
+            try {
+                const response = await fetch('/api/expenses');
+                const expenses = await response.json();
+                displayExpenses(expenses);
+            } catch (error) {
+                console.error('Error loading expenses:', error);
+                document.getElementById('expenses-list').innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">❌</div>
+                        <p>Error loading expenses. Please try again.</p>
+                    </div>
+                `;
+            }
+        }
+
+        // --- DISPLAY FUNCTIONS ---
+        function displayLoans(loans, containerId, showMarkButton = true) {
+            const container = document.getElementById(containerId);
+            
+            if (!loans || loans.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">🎉</div>
+                        <p>No loans to show!</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = loans.map(loan => `
+                <div class="loan-card">
+                    <div class="card-header">
+                        <div class="card-title">📌 ${loan.friend_name}</div>
+                        <div class="card-amount">$${loan.amount.toFixed(2)}</div>
+                    </div>
+                    <div class="card-details">
+                        <div class="detail-item">
+                            <div class="detail-label">Relationship</div>
+                            <div class="detail-value">${loan.relationship}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Date</div>
+                            <div class="detail-value">${new Date(loan.date).toLocaleDateString()}</div>
+                        </div>
+                    </div>
+                    <div class="card-details">
+                        <div class="detail-item">
+                            <div class="detail-label">Friend Email</div>
+                            <div class="detail-value">${loan.friend_email}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Status</div>
+                            <span class="status-badge ${loan.status === 'pending' ? 'status-pending' : 'status-returned'}">
+                                ${loan.status}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="laned-to-badge">
+                        💸 Lent to ${loan.friend_name}
+                    </div>
+                    ${showMarkButton && loan.status === 'pending' ? `
+                        <div class="card-actions">
+                            <button class="btn-mark-returned" onclick="markLoanReturned('${loan._id}', '${loan.friend_name}', ${loan.amount})">
+                                ✅ Mark as Returned
+                            </button>
+                        </div>
+                    ` : ''}
+                </div>
+            `).join('');
+        }
+
+        function displayExpenses(expenses) {
+            const container = document.getElementById('expenses-list');
+            
+            if (!expenses || expenses.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">💰</div>
+                        <p>No expenses tracked yet!</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = expenses.map(expense => `
+                <div class="expense-card">
+                    <div class="card-header">
+                        <div class="card-title">${expense.category}</div>
+                        <div class="card-amount">$${Math.abs(expense.amount).toFixed(2)}</div>
+                    </div>
+                    <div class="card-details">
+                        <div class="detail-item">
+                            <div class="detail-label">Description</div>
+                            <div class="detail-value">${expense.description}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Date</div>
+                            <div class="detail-value">${new Date(expense.date).toLocaleDateString()}</div>
+                        </div>
+                    </div>
+                    ${expense.amount < 0 ? `
+                        <div class="status-badge status-returned">
+                            ↩️ Loan Return Credit
+                        </div>
+                    ` : ''}
+                </div>
+            `).join('');
+        }
+
+        // --- MARK LOAN AS RETURNED ---
+        async function markLoanReturned(loanId, friendName, loanAmount) {
+            const btn = event.target;
+            
+            // Get username from session (you may need to pass this from server)
+            const username = '{{ session.get("username", "User") }}'; // Adjust based on your session setup
+
+            if (!username || username === 'User') {
+                alert('Please log in first!');
+                return;
+            }
+
+            // Show loading state
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<span class="loading-spinner"></span> Processing...';
+            btn.disabled = true;
+
+            try {
+                const response = await fetch('/mark_loan_returned', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        loan_id: loanId,
+                        username: username,
+                        loan_amount: loanAmount,
+                        friend_name: friendName
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    // Play ka-ching sound
+                    const sound = document.getElementById('ka-ching-sound');
+                    sound.play().catch(err => console.log('Sound play failed:', err));
+
+                    // Trigger confetti explosion
+                    triggerConfetti();
+
+                    // Show success message
+                    alert(`🎉 ${result.message}`);
+
+                    // Reload the loans list
+                    loadActiveLoans();
+                } else {
+                    alert(`❌ ${result.message}`);
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                }
+            } catch (error) {
+                console.error('Error marking loan as returned:', error);
+                alert('Error processing loan return. Please try again.');
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        }
+
+        // --- CONFETTI EXPLOSION ---
+        function triggerConfetti() {
+            const duration = 3 * 1000;
+            const animationEnd = Date.now() + duration;
+            const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
+
+            function randomInRange(min, max) {
+                return Math.random() * (max - min) + min;
+            }
+
+            const interval = setInterval(function() {
+                const timeLeft = animationEnd - Date.now();
+
+                if (timeLeft <= 0) {
+                    return clearInterval(interval);
+                }
+
+                const particleCount = 50 * (timeLeft / duration);
+                confetti(Object.assign({}, defaults, {
+                    particleCount,
+                    origin: { x: randomInRange(0.1, 0.9), y: Math.random() - 0.2 }
+                }));
+            }, 250);
+        }
+
+        // Load active loans on page load
+        window.addEventListener('load', loadActiveLoans);
+    </script>
+</body>
+</html>
