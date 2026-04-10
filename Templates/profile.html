@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Profile | YourTreasurer</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/Style.css') }}">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
     <style>
         .profile-container {
@@ -132,6 +132,16 @@
                     {% endfor %}
                 {% endif %}
             {% endwith %}
+
+            {% if session.get('user') and messages and messages|selectattr('0', 'equalto', 'info')|list %}
+                <form id="update-limit-form" method="POST" action="/update_monthly_limit" style="margin-bottom: 20px;">
+                    <div class="form-group">
+                        <label for="monthly-limit">Set New Monthly Budget Limit (₹)</label>
+                        <input type="number" id="monthly-limit" name="monthly_limit" required placeholder="e.g., 15000" min="1">
+                    </div>
+                    <button type="submit" class="btn-primary" style="display: block; width: 100%; padding: 14px; background: linear-gradient(135deg, #00E0FF, #00FFA3); color: white; border: none; border-radius: 10px; font-size: 1.1rem; font-weight: 600; cursor: pointer;">Set New Limit</button>
+                </form>
+            {% endif %}
 
             <form id="login-form" method="POST" action="/login">
                 <div class="form-group">
