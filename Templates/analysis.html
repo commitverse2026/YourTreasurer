@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YourTreasurer | Analysis</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <style>
+        /* Page-local layout so the chart scrolls without editing global style.css */
+        body.analysis-page {
+            overflow-y: auto;
+            overflow-x: hidden;
+            min-height: 100%;
+            height: auto;
+        }
+        .analysis-main {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            width: 100%;
+            padding: 88px 20px 100px;
+            box-sizing: border-box;
+            z-index: 5;
+        }
+        .analysis-header {
+            text-align: center;
+            margin-bottom: 1.25rem;
+        }
+        .analysis-header h1 {
+            font-size: clamp(1.75rem, 5vw, 2.5rem);
+            color: var(--navy-dark);
+            font-weight: 800;
+            letter-spacing: -1px;
+        }
+        .analysis-header p {
+            color: var(--blue-mid);
+            font-size: 0.95rem;
+            margin-top: 0.35rem;
+        }
+        .view-toggle {
+            display: inline-flex;
+            background: rgba(255, 255, 255, 0.55);
+            border-radius: 50px;
+            padding: 4px;
+            box-shadow: 0 4px 20px rgba(15, 40, 84, 0.12);
+            margin-bottom: 1.5rem;
+        }
+        .view-toggle button {
+            border: none;
+            background: transparent;
+            color: var(--navy-dark);
+            font-family: 'Poppins', sans-serif;
+            font-weight: 600;
+            font-size: 0.9rem;
+            padding: 10px 22px;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: background 0.25s ease, color 0.25s ease, box-shadow 0.25s ease;
+        }
+        .view-toggle button:hover:not(.active) {
+            background: rgba(28, 77, 141, 0.08);
+        }
+        .view-toggle button.active {
+            background: var(--navy-dark);
+            color: #fff;
+            box-shadow: 0 2px 12px rgba(15, 40, 84, 0.25);
+        }
+        .chart-panel {
+            width: min(960px, 100%);
+            background: rgba(255, 255, 255, 0.72);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 1.25rem 1rem 1.5rem;
+            box-shadow: 0 8px 32px rgba(15, 40, 84, 0.1);
+        }
+        .chart-panel canvas {
+            max-height: 420px;
+        }
+        #dynamic-bg {
+            background-image: url('{{ url_for("static", filename="images/Analysis.jpg") }}');
+        }
+    </style>
+</head>
+<body class="analysis-page">
+    <div class="brand-logo-top">
+        <img src="{{ url_for('static', filename='images/logo.png') }}" alt="YourTreasurer Logo">
+    </div>
+
+    <button class="menu-trigger" id="menu-btn">
+        <span>☰ Menu</span>
+    </button>
+
+    <div class="menu-backdrop" id="menu-backdrop"></div>
+
+    <nav id="side-nav" class="side-nav">
+        <button class="close-btn" id="close-btn">&times;</button>
+        <div class="nav-links">
+            <a href="/" data-bg="{{ url_for('static', filename='images/bg.svg') }}">Home</a>
+            <a href="/my_profile" data-bg="{{ url_for('static', filename='images/profile.jpg') }}">My Profile</a>
+            <a href="/my_expenses" data-bg="{{ url_for('static', filename='images/expenses.avif') }}">My Expenses</a>
+            <a href="/analysis" data-bg="{{ url_for('static', filename='images/Analysis.jpg') }}">Analysis</a>
+            <a href="/interval_spend" data-bg="{{ url_for('static', filename='images/interval.jpg') }}">Interval Spend</a>
+            <a href="/about_us" data-bg="{{ url_for('static', filename='images/aboutus.png') }}">About Us</a>
+        </div>
+    </nav>
+
+    <div id="dynamic-bg" class="dynamic-bg"></div>
+    <div id="hover-bg" class="dynamic-bg hover-layer"></div>
+
+    <main class="analysis-main">
+        <div class="analysis-header">
+            <h1>Spending analysis</h1>
+            <p id="chart-subtitle">Today by hour — amounts in your currency</p>
+        </div>
+
+        <div class="view-toggle" role="group" aria-label="Chart time range">
+            <button type="button" id="btn-day" class="active" aria-pressed="true">Day</button>
+            <button type="button" id="btn-month" aria-pressed="false">Month</button>
+        </div>
+
+        <div class="chart-panel">
+            <canvas id="spendChart" aria-label="Spending comparison chart"></canvas>
+        </div>
+    </main>
+
+    <footer class="common-footer">
+        YourTreasurer &copy; 2026 | Helping Hand
+    </footer>
+
+    <script>
+        const menuBtn = document.getElementById('menu-btn');
+        const closeBtn = document.getElementById('close-btn');
+        const sideNav = document.getElementById('side-nav');
+        const backdrop = document.getElementById('menu-backdrop');
+        const hoverBg = document.getElementById('hover-bg');
+        const navLinks = document.querySelectorAll('.nav-links a');
+
+        function toggleMenu() {
+            sideNav.classList.toggle('open');
+            backdrop.classList.toggle('active');
+            if (sideNav.classList.contains('open')) {
+                document.body.style.position = 'fixed';
+                document.body.style.width = '100%';
+            } else {
+                document.body.style.position = '';
+                hoverBg.style.opacity = '0';
+            }
+        }
+
+        navLinks.forEach(link => {
+            link.addEventListener('mouseenter', () => {
+                hoverBg.style.backgroundImage = `url(${link.getAttribute('data-bg')})`;
+                hoverBg.style.opacity = '1';
+            });
+            link.addEventListener('mouseleave', () => {
+                hoverBg.style.opacity = '0';
+            });
+        });
+
+        menuBtn.addEventListener('click', toggleMenu);
+        closeBtn.addEventListener('click', toggleMenu);
+        backdrop.addEventListener('click', toggleMenu);
+
+        /* ---- Chart data: replace with fetch('/api/...') when backend aggregates are ready ---- */
+        function hourLabels24() {
+            const labels = [];
+            for (let h = 0; h < 24; h++) {
+                const hour12 = h % 12 === 0 ? 12 : h % 12;
+                const ap = h < 12 ? 'a' : 'p';
+                labels.push(hour12 + ap);
+            }
+            return labels;
+        }
+
+        function last30DayLabels() {
+            const labels = [];
+            for (let i = 29; i >= 0; i--) {
+                const d = new Date();
+                d.setHours(0, 0, 0, 0);
+                d.setDate(d.getDate() - i);
+                labels.push(d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
+            }
+            return labels;
+        }
+
+        function stableDemoHourly() {
+            const base = [0, 0, 0, 0, 0, 15, 45, 120, 35, 0, 25, 180, 95, 0, 40, 60, 220, 150, 200, 45, 30, 0, 0, 0];
+            return base;
+        }
+
+        function stableDemoDaily() {
+            const out = [];
+            for (let i = 0; i < 30; i++) {
+                out.push(40 + ((i * 17 + 23) % 180));
+            }
+            return out;
+        }
+
+        const DATA_DAY = {
+            labels: hourLabels24(),
+            data: stableDemoHourly(),
+            title: 'Today — spending by hour',
+            xTitle: 'Hour of day',
+            yTitle: 'Amount spent'
+        };
+
+        const DATA_MONTH = {
+            labels: last30DayLabels(),
+            data: stableDemoDaily(),
+            title: 'Last 30 days — spending by day',
+            xTitle: 'Date',
+            yTitle: 'Amount spent'
+        };
+
+        const navy = '#0F2854';
+        const blueMid = '#1C4D8D';
+        const blueSoft = '#4988C4';
+
+        const ctx = document.getElementById('spendChart').getContext('2d');
+        const chart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: DATA_DAY.labels,
+                datasets: [{
+                    label: 'Spending',
+                    data: DATA_DAY.data,
+                    backgroundColor: blueSoft,
+                    borderColor: blueMid,
+                    borderWidth: 1,
+                    borderRadius: 6,
+                    hoverBackgroundColor: navy
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                animation: {
+                    duration: 600,
+                    easing: 'easeOutQuart'
+                },
+                plugins: {
+                    legend: { display: false },
+                    title: {
+                        display: true,
+                        text: DATA_DAY.title,
+                        color: navy,
+                        font: { family: 'Poppins', size: 16, weight: '600' },
+                        padding: { bottom: 12 }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function (ctx) {
+                                const v = ctx.raw;
+                                return ' ' + (typeof v === 'number' ? v.toLocaleString() : v);
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: DATA_DAY.xTitle,
+                            color: blueMid,
+                            font: { family: 'Poppins', size: 12, weight: '600' }
+                        },
+                        ticks: {
+                            color: blueMid,
+                            maxRotation: 45,
+                            minRotation: 0,
+                            autoSkip: true,
+                            maxTicksLimit: 24
+                        },
+                        grid: { color: 'rgba(15, 40, 84, 0.06)' }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: DATA_DAY.yTitle,
+                            color: blueMid,
+                            font: { family: 'Poppins', size: 12, weight: '600' }
+                        },
+                        ticks: { color: blueMid },
+                        grid: { color: 'rgba(15, 40, 84, 0.08)' }
+                    }
+                }
+            }
+        });
+
+        const btnDay = document.getElementById('btn-day');
+        const btnMonth = document.getElementById('btn-month');
+        const subtitleEl = document.getElementById('chart-subtitle');
+
+        function applyView(mode) {
+            const isDay = mode === 'day';
+            const pack = isDay ? DATA_DAY : DATA_MONTH;
+
+            chart.data.labels = pack.labels.slice();
+            chart.data.datasets[0].data = pack.data.slice();
+            chart.options.plugins.title.text = pack.title;
+            chart.options.scales.x.title.text = pack.xTitle;
+            chart.options.scales.y.title.text = pack.yTitle;
+            chart.options.scales.x.ticks.maxTicksLimit = isDay ? 24 : 12;
+
+            subtitleEl.textContent = isDay
+                ? 'Today by hour — amounts in your currency'
+                : 'Last 30 calendar days — amounts in your currency';
+
+            btnDay.classList.toggle('active', isDay);
+            btnMonth.classList.toggle('active', !isDay);
+            btnDay.setAttribute('aria-pressed', isDay ? 'true' : 'false');
+            btnMonth.setAttribute('aria-pressed', isDay ? 'false' : 'true');
+
+            chart.update();
+        }
+
+        btnDay.addEventListener('click', () => applyView('day'));
+        btnMonth.addEventListener('click', () => applyView('month'));
+    </script>
+</body>
+</html>
