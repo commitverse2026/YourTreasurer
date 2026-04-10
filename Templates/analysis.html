@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analysis | YourTreasurer</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="brand-logo-top">
+        <a href="/"><img src="{{ url_for('static', filename='images/logo.png') }}" alt="Logo"></a>
+    </div>
+
+    <button class="menu-trigger" id="menu-btn"><span>☰ Menu</span></button>
+    <div class="menu-backdrop" id="menu-backdrop"></div>
+
+    <nav id="side-nav" class="side-nav">
+        <button class="close-btn" id="close-btn">&times;</button>
+        <div class="nav-links">
+            <a href="/">Home</a>
+            <a href="/my_profile">My Profile</a>
+            <a href="/my_expenses">My Expenses</a>
+            <a href="/analysis" class="active">Analysis</a>
+            <a href="/interval_spend">Interval Spend</a>
+            <a href="/about_us">About Us</a>
+        </div>
+    </nav>
+
+    <div class="dynamic-bg" style='background-image: url("{{ url_for('static', filename='images/Analysis.jpg') }}");'></div>
+
+    <div class="main-layout-wrapper">
+        <div class="analysis-container">
+            <h1 class="title" style="font-size: 3rem; margin-bottom: 10px; text-shadow: 2px 2px 4px rgba(0,0,0,0.1);">Spending Analysis</h1>
+            <p style="color: var(--blue-mid); margin-bottom: 40px; font-size: 1.1rem;">Visualize your financial patterns</p>
+            
+            <div class="chart-controls" style="text-align: center; margin-bottom: 35px;">
+                <button id="day-view-btn" class="btn-primary" style="width: auto; padding: 12px 35px; margin: 0 8px; border-radius: 25px; background: linear-gradient(135deg, #0F2854, #1C4D8D); box-shadow: 0 4px 15px rgba(15, 40, 84, 0.3);">Day View</button>
+                <button id="month-view-btn" class="btn-primary" style="width: auto; padding: 12px 35px; margin: 0 8px; border-radius: 25px; background: linear-gradient(135deg, #0F2854, #1C4D8D); opacity: 0.6; box-shadow: 0 4px 15px rgba(15, 40, 84, 0.3);">Month View</button>
+            </div>
+
+            <div class="chart-wrapper" style="max-width: 550px; margin: 0 auto; background: linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(255, 255, 255, 0.95)); padding: 40px; border-radius: 25px; box-shadow: 0 20px 50px rgba(15, 40, 84, 0.15); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.5);">
+                <canvas id="spendChart"></canvas>
+            </div>
+
+            <div class="stats-summary" style="margin-top: 35px; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
+                <div class="stat-card" style="background: linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(255, 255, 255, 0.95)); padding: 25px; border-radius: 20px; text-align: center; box-shadow: 0 10px 30px rgba(15, 40, 84, 0.1); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.5); transition: transform 0.3s, box-shadow 0.3s;">
+                    <div style="font-size: 2.5rem; margin-bottom: 10px;">💰</div>
+                    <h3 style="color: var(--navy-dark); margin: 10px 0; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px;">Total Spent</h3>
+                    <div id="total-spent" style="color: var(--blue-mid); font-size: 1.8rem; font-weight: 700;">₹0</div>
+                </div>
+                <div class="stat-card" style="background: linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(255, 255, 255, 0.95)); padding: 25px; border-radius: 20px; text-align: center; box-shadow: 0 10px 30px rgba(15, 40, 84, 0.1); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.5); transition: transform 0.3s, box-shadow 0.3s;">
+                    <div style="font-size: 2.5rem; margin-bottom: 10px;">📊</div>
+                    <h3 style="color: var(--navy-dark); margin: 10px 0; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px;">Top Category</h3>
+                    <div id="top-category" style="color: var(--blue-mid); font-size: 1.2rem; font-weight: 600;">-</div>
+                </div>
+                <div class="stat-card" style="background: linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(255, 255, 255, 0.95)); padding: 25px; border-radius: 20px; text-align: center; box-shadow: 0 10px 30px rgba(15, 40, 84, 0.1); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.5); transition: transform 0.3s, box-shadow 0.3s;">
+                    <div style="font-size: 2.5rem; margin-bottom: 10px;">📈</div>
+                    <h3 style="color: var(--navy-dark); margin: 10px 0; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px;">Categories</h3>
+                    <div id="category-count" style="color: var(--blue-mid); font-size: 1.8rem; font-weight: 700;">0</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="common-footer">
+        YourTreasurer &copy; 2026 | Helping Hand
+    </footer>
+
+    <script>
+        const menuBtn = document.getElementById('menu-btn');
+        const closeBtn = document.getElementById('close-btn');
+        const sideNav = document.getElementById('side-nav');
+        const backdrop = document.getElementById('menu-backdrop');
+
+        function playWhoosh() {
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            oscillator.frequency.setValueAtTime(400, audioContext.currentTime);
+            oscillator.frequency.exponentialRampToValueAtTime(100, audioContext.currentTime + 0.2);
+            gainNode.gain.setValueAtTime(0.2, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.3);
+        }
+
+        function toggleMenu() {
+            sideNav.classList.toggle('open');
+            backdrop.classList.toggle('active');
+            if (sideNav.classList.contains('open')) {
+                playWhoosh();
+            }
+        }
+
+        menuBtn.addEventListener('click', toggleMenu);
+        closeBtn.addEventListener('click', toggleMenu);
+        backdrop.addEventListener('click', toggleMenu);
+
+        let spendChart;
+        let currentView = 'day';
+
+        const dayViewBtn = document.getElementById('day-view-btn');
+        const monthViewBtn = document.getElementById('month-view-btn');
+
+        async function fetchSpendData() {
+            try {
+                const response = await fetch('/api/spend_data');
+                const data = await response.json();
+                return data;
+            } catch (error) {
+                console.error('Error fetching spend data:', error);
+                return {
+                    categories: ["Educational", "Lifestyle", "Healthy Food", "Junk Food", "Hostel Rent", "Travelling"],
+                    amounts: [1200, 500, 800, 300, 5000, 450]
+                };
+            }
+        }
+
+        async function initChart() {
+            const data = await fetchSpendData();
+            const ctx = document.getElementById('spendChart').getContext('2d');
+            
+            spendChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: data.categories,
+                    datasets: [{
+                        data: data.amounts,
+                        backgroundColor: ['#0F2854', '#1C4D8D', '#4988C4', '#BDE8F5', '#7EC8E3', '#5BA4C4'],
+                        borderWidth: 2,
+                        borderColor: '#ffffff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    animation: {
+                        animateRotate: true,
+                        animateScale: true,
+                        duration: 1500,
+                        easing: 'easeOutQuart'
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                font: { family: 'Poppins', size: 12 },
+                                padding: 20,
+                                usePointStyle: true
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.label || '';
+                                    const value = context.parsed || 0;
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = ((value / total) * 100).toFixed(1);
+                                    return `${label}: ₹${value} (${percentage}%)`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            updateStatsDetails(data);
+        }
+
+        function updateStatsDetails(data) {
+            const total = data.amounts.reduce((a, b) => a + b, 0);
+            const maxAmount = Math.max(...data.amounts);
+            const maxIndex = data.amounts.indexOf(maxAmount);
+            const maxCategory = data.categories[maxIndex];
+
+            const totalSpentEl = document.getElementById('total-spent');
+            animateValue(totalSpentEl, 0, total, 1000);
+
+            const topCategoryEl = document.getElementById('top-category');
+            topCategoryEl.textContent = `${maxCategory}`;
+            topCategoryEl.style.opacity = '0';
+            setTimeout(() => {
+                topCategoryEl.style.transition = 'opacity 0.5s';
+                topCategoryEl.style.opacity = '1';
+            }, 100);
+
+            const categoryCountEl = document.getElementById('category-count');
+            categoryCountEl.textContent = data.categories.length;
+            categoryCountEl.style.opacity = '0';
+            setTimeout(() => {
+                categoryCountEl.style.transition = 'opacity 0.5s';
+                categoryCountEl.style.opacity = '1';
+            }, 200);
+
+            document.querySelectorAll('.stat-card').forEach(card => {
+                card.addEventListener('mouseenter', () => {
+                    card.style.transform = 'translateY(-5px)';
+                    card.style.boxShadow = '0 15px 40px rgba(15, 40, 84, 0.2)';
+                });
+                card.addEventListener('mouseleave', () => {
+                    card.style.transform = 'translateY(0)';
+                    card.style.boxShadow = '0 10px 30px rgba(15, 40, 84, 0.1)';
+                });
+            });
+        }
+
+        function animateValue(element, start, end, duration) {
+            const startTime = performance.now();
+            const update = (currentTime) => {
+                const elapsed = currentTime - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                const value = Math.floor(progress * (end - start) + start);
+                element.textContent = '₹' + value.toLocaleString();
+                if (progress < 1) {
+                    requestAnimationFrame(update);
+                }
+            };
+            requestAnimationFrame(update);
+        }
+
+        dayViewBtn.addEventListener('click', () => {
+            currentView = 'day';
+            dayViewBtn.style.opacity = '1';
+            monthViewBtn.style.opacity = '0.6';
+            updateChartForView('day');
+        });
+
+        monthViewBtn.addEventListener('click', () => {
+            currentView = 'month';
+            monthViewBtn.style.opacity = '1';
+            dayViewBtn.style.opacity = '0.6';
+            updateChartForView('month');
+        });
+
+        async function updateChartForView(view) {
+            const data = await fetchSpendData();
+            if (view === 'day') {
+                spendChart.data.datasets[0].data = [300, 150, 200, 100, 1200, 80];
+                spendChart.data.labels = data.categories;
+            } else {
+                spendChart.data.datasets[0].data = data.amounts;
+                spendChart.data.labels = data.categories;
+            }
+            spendChart.update('active');
+        }
+
+        window.addEventListener('load', initChart);
+    </script>
+</body>
+</html>

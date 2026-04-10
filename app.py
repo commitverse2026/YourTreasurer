@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, flash, redirect, url_for, jsonify
+from flask import Flask, render_template, request, flash, redirect, url_for, jsonify, session
 from flask_pymongo import PyMongo
 from flask_mail import Mail, Message
 from werkzeug.utils import secure_filename
@@ -36,6 +36,17 @@ mail = Mail(app)
 
 app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024 # 5MB limit for receipts
 
+# --- TEST MONGODB CONNECTION ---
+try:
+    mongo.db.list_collection_names()
+    print("✓ MongoDB Atlas connection successful!")
+except Exception as e:
+    print(f"✗ MongoDB Atlas connection failed: {e}")
+    print("Please check:")
+    print("  1. Atlas credentials are correct")
+    print("  2. Your IP is whitelisted in Atlas Network Access")
+    print("  3. Cluster exists and is running")
+
 # --- ASYNC BACKGROUND TASKS ---
 
 def send_async_email(app, msg):
@@ -52,10 +63,13 @@ def send_async_email(app, msg):
 @app.before_request
 def check_budget_setup():
     """
-    TODO Task 1: Check if the user has set up their initial monthly budget.
-    If they haven't (and they aren't on static/profile pages), redirect them to MyProfile.
+    Task 1: Check if user is authenticated. If not, redirect to MyProfile.
+    Allow access to profile page, static files, and authentication routes.
     """
-    pass 
+    allowed_routes = ['my_profile', 'login', 'signup', 'about_us', 'analysis']
+    
+    if 'user' not in session and request.endpoint and request.endpoint not in allowed_routes:
+        return redirect(url_for('my_profile')) 
 
 # --- CORE NAVIGATION ROUTES ---
 
