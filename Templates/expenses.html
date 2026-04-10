@@ -1,4 +1,55 @@
 <!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <title>My Expenses</title>
+</head>
+<body>
+    <div class="nav">
+        <a href="/">← Back</a>
+        <h2>Records</h2>
+        <div></div>
+    </div>
+
+    <div class="container">
+        <div class="card">
+            <h3>Add Expense</h3>
+            <form method="POST" action="/add_expense">
+                <input type="number" name="amount" placeholder="Amount (₹)" required>
+                <input name="category" placeholder="Category (e.g. Food, Rent)" required>
+                <button class="btn">Add Expense</button>
+            </form>
+        </div>
+
+        <div class="card">
+            <h3>Active Loans</h3>
+            {% for l in loans %}
+            <div class="loan-item">
+                <div>
+                    <strong>{{l.friend_name}}</strong><br>
+                    <small style="color: #94a3b8;">₹{{l.amount}}</small>
+                </div>
+                {% if l.status == 'pending' %}
+                <form method="POST" action="/mark_returned/{{l._id}}">
+                    <button class="btn" style="padding: 5px 15px; width: auto;">Settle</button>
+                </form>
+                {% else %}
+                <span style="color: var(--success);">✓ Paid</span>
+                {% endif %}
+            </div>
+            {% endfor %}
+            
+            <hr style="border: 0; border-top: 1px solid #334155; margin: 20px 0;">
+            
+            <form method="POST" action="/add_loan">
+                <input name="friend_name" placeholder="Friend's Name">
+                <input type="number" name="amount" placeholder="Loan Amount">
+                <button class="btn" style="background: #6366f1; color: white;">Log New Loan</button>
+            </form>
+        </div>
+    </div>
+</body>
+</html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">

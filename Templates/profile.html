@@ -1,4 +1,29 @@
 <!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <title>Login - Treasurer</title>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <h2 style="text-align: center;">Welcome Back</h2>
+            <form method="POST">
+                <label>User Name</label>
+                <input name="name" placeholder="Enter name" required>
+                
+                <label>Password</label>
+                <input type="password" name="password" placeholder="••••••••" required>
+                
+                <label>Monthly Budget (₹)</label>
+                <input type="number" name="monthly_limit" placeholder="e.g. 10000" required>
+                
+                <button class="btn">Get Started</button>
+            </form>
+        </div>
+    </div>
+</body>
+</html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
