@@ -1,55 +1,4 @@
 <!DOCTYPE html>
-<html>
-<head>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <title>My Expenses</title>
-</head>
-<body>
-    <div class="nav">
-        <a href="/">← Back</a>
-        <h2>Records</h2>
-        <div></div>
-    </div>
-
-    <div class="container">
-        <div class="card">
-            <h3>Add Expense</h3>
-            <form method="POST" action="/add_expense">
-                <input type="number" name="amount" placeholder="Amount (₹)" required>
-                <input name="category" placeholder="Category (e.g. Food, Rent)" required>
-                <button class="btn">Add Expense</button>
-            </form>
-        </div>
-
-        <div class="card">
-            <h3>Active Loans</h3>
-            {% for l in loans %}
-            <div class="loan-item">
-                <div>
-                    <strong>{{l.friend_name}}</strong><br>
-                    <small style="color: #94a3b8;">₹{{l.amount}}</small>
-                </div>
-                {% if l.status == 'pending' %}
-                <form method="POST" action="/mark_returned/{{l._id}}">
-                    <button class="btn" style="padding: 5px 15px; width: auto;">Settle</button>
-                </form>
-                {% else %}
-                <span style="color: var(--success);">✓ Paid</span>
-                {% endif %}
-            </div>
-            {% endfor %}
-            
-            <hr style="border: 0; border-top: 1px solid #334155; margin: 20px 0;">
-            
-            <form method="POST" action="/add_loan">
-                <input name="friend_name" placeholder="Friend's Name">
-                <input type="number" name="amount" placeholder="Loan Amount">
-                <button class="btn" style="background: #6366f1; color: white;">Log New Loan</button>
-            </form>
-        </div>
-    </div>
-</body>
-</html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -57,30 +6,43 @@
     <title>My Expenses | YourTreasurer</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
-    <style>
-        .card { max-width: 760px; margin: auto; padding: 28px; border-radius: 20px; background: rgba(255,255,255,0.9); box-shadow: 0 15px 35px rgba(15,40,84,.12); text-align: left; }
-        .card h1 { color: var(--navy-dark); margin-bottom: 10px; }
-        .card p { color: var(--blue-mid); }
-    </style>
 </head>
 <body>
-    <div class="brand-logo-top"><a href="/"><img src="{{ url_for('static', filename='images/logo.png') }}" alt="Logo"></a></div>
-    <button class="menu-trigger" id="menu-btn"><span>Menu</span></button>
+    <div class="brand-logo-top">
+        <a href="/"><img src="{{ url_for('static', filename='images/logo.png') }}" alt="Logo" onerror="this.style.display='none'"></a>
+    </div>
+    <button class="menu-trigger" id="menu-btn"><span>☰ Menu</span></button>
     <div class="menu-backdrop" id="menu-backdrop"></div>
     <nav id="side-nav" class="side-nav">
         <button class="close-btn" id="close-btn">&times;</button>
         <div class="nav-links">
-            <a href="/">Home</a><a href="/my_profile">My Profile</a><a href="/my_expenses" class="active">My Expenses</a>
-            <a href="/analysis">Analysis</a><a href="/interval_spend">Interval Spend</a><a href="/about_us">About Us</a>
+            <a href="/">Home</a>
+            <a href="/my_profile">My Profile</a>
+            <a href="/my_expenses" class="active">My Expenses</a>
+            <a href="/analysis">Analysis</a>
+            <a href="/interval_spend">Interval Spend</a>
+            <a href="/about_us">About Us</a>
+            <a href="/logout" style="opacity:0.4; font-size:1rem;">Logout</a>
         </div>
     </nav>
-    <div class="dynamic-bg" style="background-image: url('{{ url_for('static', filename='images/expenses.avif') }}');"></div>
-    <div class="main-layout-wrapper"><section class="card"><h1>My Expenses</h1><p>Expenses page is active and ready for expense listing integration.</p></section></div>
+    <div class="dynamic-bg" style="background: linear-gradient(135deg, #BDE8F5 0%, #e8f4fd 100%);"></div>
+    <div class="main-layout-wrapper">
+        <div style="background:rgba(255,255,255,0.9);padding:40px;border-radius:20px;text-align:center;max-width:500px;">
+            <h2 style="color:var(--navy-dark);font-size:2rem;">My Expenses</h2>
+            <p style="color:var(--blue-mid);margin-top:10px;">Coming in Task 3 🚀</p>
+            <a href="/" style="display:inline-block;margin-top:20px;padding:12px 28px;background:var(--navy-dark);color:white;border-radius:12px;text-decoration:none;font-weight:700;">← Back Home</a>
+        </div>
+    </div>
     <footer class="common-footer">YourTreasurer &copy; 2026 | Helping Hand</footer>
     <script>
-        const menuBtn=document.getElementById('menu-btn'),closeBtn=document.getElementById('close-btn'),sideNav=document.getElementById('side-nav'),backdrop=document.getElementById('menu-backdrop');
-        function toggleMenu(){sideNav.classList.toggle('open');backdrop.classList.toggle('active');}
-        menuBtn.addEventListener('click',toggleMenu);closeBtn.addEventListener('click',toggleMenu);backdrop.addEventListener('click',toggleMenu);
+        const menuBtn = document.getElementById('menu-btn');
+        const closeBtn = document.getElementById('close-btn');
+        const sideNav = document.getElementById('side-nav');
+        const backdrop = document.getElementById('menu-backdrop');
+        function toggleMenu() { sideNav.classList.toggle('open'); backdrop.classList.toggle('active'); }
+        menuBtn.addEventListener('click', toggleMenu);
+        closeBtn.addEventListener('click', toggleMenu);
+        backdrop.addEventListener('click', toggleMenu);
     </script>
 </body>
 </html>
