@@ -70,7 +70,6 @@ mail = Mail(app)
 
 app.config["MAX_CONTENT_LENGTH"] = 5 * 1024 * 1024  # 5MB limit for receipts
 LOCAL_USERS_FILE = os.path.join(app.root_path, "local_users.json")
-LOCAL_EXPENSES_FILE = os.path.join(app.root_path, "local_daily_expenses.json")
 MONGO_AVAILABLE = None
 MONGO_LAST_CHECK = None
 MONGO_LAST_ERROR = ""
@@ -92,32 +91,11 @@ def send_async_email(app, msg):
             print(f"Background Mail Error: {e}")
 
 
-def send_cycle_reset_email(user_name, user_email=None):
-    """Send notification when 30-day cycle resets."""
-    if not user_email:
-        # If no email, perhaps skip or use a default
-        return
-    msg = Message(
-        "YourTreasurer: Monthly Budget Cycle Reset",
-        sender=app.config["MAIL_USERNAME"],
-        recipients=[user_email],
-    )
-    msg.body = f"Hi {user_name},\n\nYour 30-day budget cycle has reset. Your current spend has been reset to 0, and you can set a new monthly limit.\n\nBest,\nYourTreasurer Team"
-    send_async_email(app, msg)
-
-
 def users_collection():
     if mongo is None:
         raise ConfigurationError(MONGO_INIT_ERROR or "MongoDB client is not initialized.")
     db_name = app.config["MONGO_DBNAME"]
     return mongo.cx[db_name]["users"]
-
-
-def daily_expenses_collection():
-    if mongo is None:
-        raise ConfigurationError(MONGO_INIT_ERROR or "MongoDB client is not initialized.")
-    db_name = app.config["MONGO_DBNAME"]
-    return mongo.cx[db_name]["daily_expenses"]
 
 
 def is_password_valid(password):
@@ -200,58 +178,6 @@ def upsert_local_user(updated_user):
     save_local_users(users)
 
 
-def load_local_expenses():
-    if not os.path.exists(LOCAL_EXPENSES_FILE):
-        return []
-    try:
-        with open(LOCAL_EXPENSES_FILE, "r", encoding="utf-8") as file:
-            data = json.load(file)
-            return data if isinstance(data, list) else []
-    except (OSError, json.JSONDecodeError):
-        return []
-
-
-def save_local_expenses(expenses):
-    with open(LOCAL_EXPENSES_FILE, "w", encoding="utf-8") as file:
-        json.dump(expenses, file, indent=2)
-
-
-def append_local_expense(expense_doc):
-    expenses = load_local_expenses()
-    expenses.append(expense_doc)
-    save_local_expenses(expenses)
-
-
-def parse_bool(value):
-    if isinstance(value, bool):
-        return value
-    if isinstance(value, str):
-        return value.strip().lower() in {"1", "true", "yes", "on"}
-    return False
-
-
-def increment_current_spend(amount):
-    user_id = session.get("user_id")
-    if not user_id:
-        return
-
-    if user_id.startswith("local:"):
-        local_user_id = user_id.replace("local:", "", 1)
-        user_doc = get_local_user_by_id(local_user_id)
-        if not user_doc:
-            return
-        current = float(user_doc.get("current_spend", 0) or 0)
-        user_doc["current_spend"] = current + amount
-        upsert_local_user(user_doc)
-        return
-
-    if is_mongo_available():
-        try:
-            users_collection().update_one({"_id": ObjectId(user_id)}, {"$inc": {"current_spend": amount}})
-        except (InvalidId, PyMongoError):
-            return
-
-
 def parse_start_date(raw_start_date):
     if isinstance(raw_start_date, datetime):
         return raw_start_date
@@ -275,25 +201,12 @@ def maybe_reset_cycle(user_doc):
         return user_doc
 
     if now > start_date + timedelta(days=30):
-        # Archive expenses before resetting
-        try:
-            expenses = list(daily_expenses_collection().find({"created_by": user_doc["name"], "created_at": {"$gte": start_date}}))
-            if expenses:
-                archived_collection = mongo.cx[app.config["MONGO_DBNAME"]]["archived_expenses"]
-                for exp in expenses:
-                    exp["archived_at"] = now
-                    archived_collection.insert_one(exp)
-                daily_expenses_collection().delete_many({"created_by": user_doc["name"], "created_at": {"$gte": start_date}})
-        except PyMongoError:
-            pass  # Ignore archiving errors
-
         users_collection().update_one(
             {"_id": user_doc["_id"]},
-            {"$set": {"current_spend": 0, "start_date": now, "monthly_limit": 0}},  # Reset monthly_limit to prompt user
+            {"$set": {"current_spend": 0, "start_date": now}},
         )
         user_doc["current_spend"] = 0
         user_doc["start_date"] = now
-        user_doc["monthly_limit"] = 0
     return user_doc
 
 
@@ -503,74 +416,18 @@ def about_us():
 
 @app.route('/add_expense', methods=['POST'])
 def add_expense():
-    """Handles adding a new daily expense / loan entry."""
+    """Handles adding a new daily expense."""
     try:
-        payload = request.get_json(silent=True) or request.form.to_dict()
+        form_data = request.form.to_dict()
+        
+        # 1. TODO: Handle Cloudinary receipt upload if 'receipt_image' exists in request.files
+        # 2. TODO: Insert form_data into MongoDB 'expenses' collection
+        # 3. TODO: Calculate if total month spend > 90% of threshold. If yes, trigger send_async_email()
 
-        category = (payload.get("category") or "").strip()
-        amount_raw = payload.get("amount")
-        is_loan = parse_bool(payload.get("is_loan"))
-        friend_email = (payload.get("friend_email") or "").strip()
-        relationship = (payload.get("relationship") or "").strip()
-
-        if not category:
-            return jsonify({"success": False, "message": "Category is required."}), 400
-
-        try:
-            amount = float(amount_raw)
-        except (TypeError, ValueError):
-            return jsonify({"success": False, "message": "Amount must be a valid number."}), 400
-        if amount <= 0:
-            return jsonify({"success": False, "message": "Amount must be greater than 0."}), 400
-
-        if is_loan and (not friend_email or not relationship):
-            return jsonify(
-                {
-                    "success": False,
-                    "message": "Friend email and relationship are required when 'Is it a Loan?' is selected.",
-                }
-            ), 400
-
-        now = datetime.utcnow()
-        expense_doc = {
-            "category": category,
-            "amount": amount,
-            "is_loan": is_loan,
-            "friend_email": friend_email if is_loan else None,
-            "relationship": relationship if is_loan else None,
-            "created_at": now,
-            "created_by": session.get("user_name", "guest"),
-        }
-
-        storage = "local"
-        if is_mongo_available():
-            try:
-                insert_result = daily_expenses_collection().insert_one(expense_doc)
-                expense_doc["_id"] = str(insert_result.inserted_id)
-                storage = "atlas"
-            except PyMongoError:
-                local_doc = expense_doc.copy()
-                local_doc["_id"] = str(uuid4())
-                local_doc["created_at"] = now.isoformat()
-                append_local_expense(local_doc)
-        else:
-            local_doc = expense_doc.copy()
-            local_doc["_id"] = str(uuid4())
-            local_doc["created_at"] = now.isoformat()
-            append_local_expense(local_doc)
-
-        increment_current_spend(amount)
-
-        return jsonify(
-            {
-                "success": True,
-                "message": "Expense saved successfully.",
-                "storage": storage,
-            }
-        )
+        return redirect(url_for('my_expenses'))
     except Exception as e:
         print(f"Expense Submit Error: {e}")
-        return jsonify({"success": False, "message": "Failed to submit expense."}), 500
+        return f"Submission failed: {e}", 500
 
 @app.route('/add_friend_loan', methods=['POST'])
 def add_friend_loan():
