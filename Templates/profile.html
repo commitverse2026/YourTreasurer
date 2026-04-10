@@ -80,10 +80,55 @@
                         <span class="btn-icon">📈</span>
                         View Analysis
                     </a>
+                    <button onclick="toggleEditForm()" class="btn-warning">
+                        <span class="btn-icon">✏️</span>
+                        Edit Profile
+                    </button>
                     <a href="/logout" class="btn-danger">
                         <span class="btn-icon">🚪</span>
                         Logout
                     </a>
+                </div>
+                
+                <!-- Edit Profile Form (Hidden by default) -->
+                <div class="edit-profile-form" id="edit-profile-form" style="display: none;">
+                    <h2 class="edit-title">Edit Your Profile</h2>
+                    <form action="/update_profile" method="POST">
+                        <div class="form-group">
+                            <label for="edit-name">
+                                <span class="label-icon">👤</span>
+                                Full Name
+                            </label>
+                            <input type="text" id="edit-name" name="name" value="{{ user.name }}" required minlength="3">
+                        </div>
+                        <div class="form-group">
+                            <label for="edit-monthly-limit">
+                                <span class="label-icon">💰</span>
+                                Monthly Budget Limit (₹)
+                            </label>
+                            <div class="input-wrapper">
+                                <span class="currency-symbol">₹</span>
+                                <input type="number" id="edit-monthly-limit" name="monthly_limit" value="{{ user.monthly_limit }}" min="100" required>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="edit-password">
+                                <span class="label-icon">🔐</span>
+                                New Password (Leave blank to keep current)
+                            </label>
+                            <input type="password" id="edit-password" name="password" placeholder="Enter new password (optional)">
+                        </div>
+                        <div class="form-actions">
+                            <button type="submit" class="btn-primary">
+                                <span class="btn-icon">💾</span>
+                                Save Changes
+                            </button>
+                            <button type="button" onclick="toggleEditForm()" class="btn-secondary">
+                                <span class="btn-icon">❌</span>
+                                Cancel
+                            </button>
+                        </div>
+                    </form>
                 </div>
                 
             {% else %}
@@ -219,6 +264,22 @@
             } else {
                 loginForm.style.display = 'none';
                 registerForm.style.display = 'block';
+            }
+        }
+
+        function toggleEditForm() {
+            const editForm = document.getElementById('edit-profile-form');
+            const profileInfo = document.querySelector('.profile-info');
+            const profileActions = document.querySelector('.profile-actions');
+            
+            if (editForm.style.display === 'none') {
+                editForm.style.display = 'block';
+                profileInfo.style.display = 'none';
+                profileActions.style.display = 'none';
+            } else {
+                editForm.style.display = 'none';
+                profileInfo.style.display = 'grid';
+                profileActions.style.display = 'flex';
             }
         }
 
