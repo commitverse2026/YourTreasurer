@@ -8,13 +8,33 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
+        html, body {
+            min-height: 100%;
+            height: auto;
+            overflow-x: hidden;
+            overflow-y: auto;
+        }
+
+        body {
+            position: relative;
+            padding-bottom: 0;
+        }
+
+        .main-layout-wrapper {
+            height: auto;
+            min-height: calc(100vh - 72px);
+            align-items: flex-start;
+            padding-top: 120px;
+            padding-bottom: 40px;
+        }
+
         .analysis-shell {
             width: min(1100px, 100%);
             display: grid;
             grid-template-columns: 1.1fr 0.9fr;
             gap: 28px;
             align-items: stretch;
-            padding: 90px 16px 88px;
+            padding: 0 16px 32px;
         }
 
         .analysis-card {
@@ -175,20 +195,20 @@
             min-height: 24px;
         }
 
-        @media (max-width: 900px) {
-            body, html {
-                overflow: auto;
-            }
+        .common-footer {
+            position: relative;
+            margin-top: 12px;
+        }
 
+        @media (max-width: 900px) {
             .main-layout-wrapper {
-                height: auto;
                 min-height: 100vh;
-                align-items: flex-start;
+                padding-top: 100px;
+                padding-bottom: 24px;
             }
 
             .analysis-shell {
                 grid-template-columns: 1fr;
-                padding-top: 100px;
             }
         }
 
