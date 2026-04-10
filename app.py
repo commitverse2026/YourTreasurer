@@ -3,6 +3,7 @@ from flask_pymongo import PyMongo
 from flask_mail import Mail, Message
 from pymongo.errors import PyMongoError
 from werkzeug.utils import secure_filename
+from dotenv import load_dotenv
 import os
 import uuid 
 import threading
@@ -11,6 +12,8 @@ import cloudinary
 import cloudinary.uploader
 from datetime import datetime
 from calendar import monthrange
+
+load_dotenv()
 
 app = Flask(__name__, template_folder="Templates", static_folder="Static", static_url_path="/static")
 app.secret_key = "campuscoin_tracker_2026"
@@ -25,15 +28,18 @@ cloudinary.config(
 )
 
 # 2. MongoDB & Mail Setup
-# TODO for Participants: Insert your free MongoDB Atlas URI here
-app.config["MONGO_URI"] = "mongodb+srv://priteepardeshi3011_db_user:o1UpyYozHv4zvlTn@cluster0.a5drjzn.mongodb.net/"
+# Prefer .env configuration, with a safe local fallback database name in the URI.
+app.config["MONGO_URI"] = os.environ.get(
+    "MONGO_URI",
+    "mongodb://127.0.0.1:27017/yourtreasurer"
+)
 mongo = PyMongo(app)
 
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
-app.config['MAIL_USERNAME'] = os.environ.get("MAIL_USER", 'your_email@gmail.com')
-app.config['MAIL_PASSWORD'] = os.environ.get("MAIL_PASS", 'your_app_password') 
+app.config['MAIL_USERNAME'] = os.environ.get("MAIL_USERNAME") or os.environ.get("MAIL_USER", 'your_email@gmail.com')
+app.config['MAIL_PASSWORD'] = os.environ.get("MAIL_PASSWORD") or os.environ.get("MAIL_PASS", 'your_app_password') 
 mail = Mail(app)
 
 app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024 # 5MB limit for receipts
