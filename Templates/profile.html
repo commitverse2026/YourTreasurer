@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+
+{% block head %}
+<style>
+    /* Premium standalone UI for the Gateway */
+    .gateway-wrapper {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 70vh;
+        animation: slideUp 0.8s ease forwards;
+        text-align: center;
+    }
+    
+    .gateway-card {
+        background: rgba(255, 255, 255, 0.08);
+        backdrop-filter: blur(15px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        padding: 40px;
+        border-radius: 20px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+        width: 100%;
+        max-width: 450px;
+        margin-top: 20px;
+    }
+    
+    .gateway-card .form-group input {
+        background: rgba(0,0,0,0.3);
+        border: 1px solid rgba(255,255,255,0.3);
+        color: white;
+        padding: 12px;
+        border-radius: 8px;
+        width: 100%;
+        margin-top: 5px;
+    }
+    
+    .gateway-title {
+        font-size: 2.5rem;
+        background: linear-gradient(45deg, #12c2e9, #c471ed, #f64f59);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        margin-bottom: 5px;
+    }
+
+    @keyframes slideUp {
+        from { transform: translateY(40px); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="gateway-wrapper">
+    <h1 class="gateway-title">Budget Gateway</h1>
+    <p class="subtitle">Securely enter your credentials to unlock YourTreasurer.</p>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <ul class="flashes">
+            {% for category, message in messages %}
+                <li class="{{ category }}" style="color: {% if category == 'error' %}#ff5252{% else %}#69f0ae{% endif %}; list-style:none;">{{ message }}</li>
+            {% endfor %}
+            </ul>
+        {% endif %}
+    {% endwith %}
+
+    <div class="gateway-card">
+        {% if not user %}
+        <form action="{{ url_for('my_profile') }}" method="POST" id="gatewayForm" style="text-align: left;">
+            <div class="form-group">
+                <label for="username" style="font-weight: 600;">Full Name</label>
+                <input type="text" id="username" name="username" placeholder="e.g. John Doe" required>
+            </div>
+            
+            <div class="form-group" style="margin-top: 15px;">
+                <label for="password" style="font-weight: 600;">Secure Password</label>
+                <input type="password" id="password" name="password" placeholder="••••••••" required>
+            </div>
+            
+            <div class="form-group" id="limit-group" style="margin-top: 15px;">
+                <label for="monthly_limit" style="font-weight: 600;">Monthly Limit (₹) <br><small style="font-weight: 400; color: #ccc;">(Required only for new setup)</small></label>
+                <input type="number" id="monthly_limit" name="monthly_limit" step="0.01" placeholder="e.g. 5000">
+            </div>
+            
+            <button type="submit" class="submit-btn" id="loginBtn" style="width: 100%; margin-top: 25px; padding: 12px; font-size: 1.1rem; background: linear-gradient(to right, #43cea2, #185a9d); border: none; color: white; border-radius: 8px; cursor: pointer;">Initialize Treasurer</button>
+        </form>
+        {% else %}
+        <div class="user-info">
+            <h2 style="margin-bottom: 20px;">Authenticated</h2>
+            <div style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 10px; text-align: left;">
+                <p style="margin-bottom: 8px;"><strong>CFO:</strong> {{ user.username }}</p>
+                {% if user.monthly_limit %}
+                    <p style="margin-bottom: 8px;"><strong>Monthly Limit:</strong> ₹{{ user.monthly_limit }}</p>
+                {% else %}
+                    <form action="{{ url_for('my_profile') }}" method="POST" style="margin-top: 10px;">
+                        <label for="update_limit" style="font-weight: 600; color: #ffd700;">30 Days Complete! Set New Limit:</label>
+                        <input type="number" name="update_limit" required style="width:100%; padding: 8px; margin-top:5px; border-radius: 5px; border: 1px solid white; background: rgba(0,0,0,0.5); color: white;" placeholder="e.g. 6000">
+                        <button type="submit" style="margin-top: 10px; margin-bottom: 15px; width: 100%; padding: 8px; background: #ffd700; color: black; border: none; font-weight: bold; cursor: pointer; border-radius: 5px;">Save New Limit</button>
+                    </form>
+                {% endif %}
+                <p><strong>Cycle Start:</strong> {{ user.start_date.strftime('%Y-%m-%d') }}</p>
+            </div>
+            <form action="{{ url_for('logout') }}" method="POST" style="margin-top: 25px;">
+                <button type="submit" class="submit-btn danger" style="width: 100%; padding: 10px; background: #e53935; border: none; border-radius: 8px; color: white; cursor: pointer;">Secure Logout</button>
+            </form>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        const flashes = document.querySelectorAll('.flashes .success');
+        if (flashes.length > 0) {
+            const unlockSound = new Audio("{{ url_for('static', filename='audio/unlock.mp3') }}");
+            unlockSound.play().catch(e => console.log("Audio play prevented:", e));
+        }
+    });
+</script>
+{% endblock %}

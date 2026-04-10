@@ -1,93 +1,197 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>YourTreasurer | Home</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
-</head>
-<body>
-    <div class="brand-logo-top">
-        <img src="{{ url_for('static', filename='images/logo.png') }}" alt="YourTreasurer Logo">
-    </div>
+{% extends "base.html" %}
 
-    <button class="menu-trigger" id="menu-btn">
-        <span>☰ Menu</span>
-    </button>
-
-    <div class="menu-backdrop" id="menu-backdrop"></div>
-
-     <nav id="side-nav" class="side-nav">
-        <button class="close-btn" id="close-btn">&times;</button>
-        <div class="nav-links">
-            <a href="/" data-bg="{{ url_for('static', filename='images/bg.svg') }}">Home</a>
-            <a href="/my_profile" data-bg="{{ url_for('static', filename='images/profile.jpg') }}">My Profile</a>
-            <a href="/my_expenses" data-bg="{{ url_for('static', filename='images/expenses.avif') }}">My Expenses</a>
-            <a href="/analysis" data-bg="{{ url_for('static', filename='images/Analysis.jpg') }}">Analysis</a>
-            <a href="/interval_spend" data-bg="{{ url_for('static', filename='images/interval.jpg') }}">Interval Spend</a>
-            <a href="/about_us" data-bg="{{ url_for('static', filename='images/aboutus.png') }}">About Us</a>
-        </div>
-    </nav>
-
-    <div id="dynamic-bg" class="dynamic-bg" style="background-image: url('{{ url_for('static', filename='images/bg.svg') }}');"></div>
-    <div id="hover-bg" class="dynamic-bg hover-layer"></div>
-
-    <div class="main-layout-wrapper">
-        <div class="content-container">
-            <h1 class="title">YourTreasurer</h1>
-            <p class="subtitle">Smart Spending for Smart Ones</p>
-        </div>
-    </div>
+{% block head %}
+<style>
+    .dashboard-panel {
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        padding: 20px;
+        border-radius: 12px;
+        margin-top: 20px;
+        color: white;
+    }
     
-    <footer class="common-footer">
-        YourTreasurer &copy; 2026 | Helping Hand
-    </footer>
+    .progress-wrapper {
+        margin: 20px 0;
+    }
 
-   
+    .progress-bar-container {
+        width: 100%;
+        background: rgba(255,255,255,0.2);
+        height: 25px;
+        border-radius: 12px;
+        overflow: hidden;
+        position: relative;
+    }
+
+    .progress-bar-fill {
+        height: 100%;
+        background: lightgreen;
+        width: 0%; /* updated via JS */
+        transition: width 0.4s ease, background-color 0.4s ease;
+    }
+
+    .hidden {
+        display: none;
+    }
+
+    /* Falling coins animation */
+    .coin {
+        position: fixed;
+        top: -50px;
+        width: 30px;
+        height: 30px;
+        background-color: gold;
+        border-radius: 50%;
+        animation: drop 2s forwards;
+        z-index: 9999;
+    }
+
+    @keyframes drop {
+        0% { transform: translateY(0); opacity: 1; }
+        100% { transform: translateY(100vh); opacity: 0; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="content-container">
+    <h1 class="title">Dashboard</h1>
+    <p class="subtitle">Welcome, {{ session.username }}!</p>
+
+    <!-- Real-Time Progress Bar -->
+    <div class="dashboard-panel">
+        <h2>Monthly Budget Progress</h2>
+        <div class="progress-wrapper">
+            <p id="budget-text">Loading...</p>
+            <div class="progress-bar-container">
+                <div class="progress-bar-fill" id="progress-fill"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Daily Expense & Loan Entry Form -->
+    <div class="dashboard-panel glass-form-wrapper">
+        <h2>Log an Expense</h2>
+        <form id="expenseForm" action="{{ url_for('add_expense') }}" method="POST" enctype="multipart/form-data" class="glass-form">
+            <div class="form-group">
+                <label for="category">Category</label>
+                <select id="category" name="category" required>
+                    <option value="" disabled selected>Select Category</option>
+                    <option value="Junk Food">Junk Food</option>
+                    <option value="Educational">Educational</option>
+                    <option value="Travel">Travel</option>
+                    <option value="Hostel Rent">Hostel Rent</option>
+                    <option value="Lifestyle">Lifestyle</option>
+                    <option value="Healthy Food">Healthy Food</option>
+                    <option value="Other">Other</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="amount">Amount (₹)</label>
+                <input type="number" id="amount" name="amount" step="0.01" required>
+            </div>
+
+            <div class="form-group">
+                <label>
+                    <input type="checkbox" id="is_loan" name="is_loan" value="yes"> Is it a Loan?
+                </label>
+            </div>
+
+            <!-- Hidden Loan Fields -->
+            <div id="loan-fields" class="hidden">
+                <div class="form-group">
+                    <label for="friend_email">Friend's Email</label>
+                    <input type="email" id="friend_email" name="friend_email">
+                </div>
+                <div class="form-group">
+                    <label for="friend_relationship">Relationship</label>
+                    <input type="text" id="friend_relationship" name="friend_relationship" placeholder="e.g. Roommate">
+                </div>
+            </div>
+
+            <!-- Receipt Upload (Task 5) -->
+            <div class="form-group">
+                <label for="receipt_image">Upload Receipt (Optional)</label>
+                <input type="file" id="receipt_image" name="receipt_image" accept="image/*">
+            </div>
+
+            <button type="submit" class="submit-btn" id="trackBtn">
+                <span id="btnText">Track Now</span>
+                <span id="btnSpinner" class="hidden">🔄 Uploading...</span>
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
 <script>
-        const menuBtn = document.getElementById('menu-btn');
-        const closeBtn = document.getElementById('close-btn');
-        const sideNav = document.getElementById('side-nav');
-        const backdrop = document.getElementById('menu-backdrop');
-        
-        const mainBg = document.getElementById('dynamic-bg');
-        const hoverBg = document.getElementById('hover-bg');
-        const navLinks = document.querySelectorAll('.nav-links a');
-        
-        // Set default background
-        const defaultBg = "{{ url_for('static', filename='images/bg.svg') }}";
-        mainBg.style.backgroundImage = `url(${defaultBg})`;
-
-        function toggleMenu() {
-            sideNav.classList.toggle('open');
-            backdrop.classList.toggle('active');
-            if (sideNav.classList.contains('open')) {
-                document.body.style.position = 'fixed';
-                document.body.style.width = '100%';
-            } else {
-                document.body.style.position = '';
-                // Reset bg when menu closes
-                hoverBg.style.opacity = '0';
-            }
+    // Audio context
+    const clinkSound = new Audio("{{ url_for('static', filename='audio/clink.mp3') }}");
+    
+    // Toggle Loan Fields
+    const loanCheckbox = document.getElementById('is_loan');
+    const loanFields = document.getElementById('loan-fields');
+    loanCheckbox.addEventListener('change', function() {
+        if(this.checked) {
+            loanFields.classList.remove('hidden');
+            document.getElementById('friend_email').required = true;
+        } else {
+            loanFields.classList.add('hidden');
+            document.getElementById('friend_email').required = false;
         }
+    });
 
-        // --- Hover Animation Logic ---
-        navLinks.forEach(link => {
-            link.addEventListener('mouseenter', () => {
-                const newImg = link.getAttribute('data-bg');
-                hoverBg.style.backgroundImage = `url(${newImg})`;
-                hoverBg.style.opacity = '1';
-            });
+    // Form Submission & Animations
+    const expenseForm = document.getElementById('expenseForm');
+    expenseForm.addEventListener('submit', function(e) {
+        // We will allow regular submission but just trigger sounds and loading state
+        const btnText = document.getElementById('btnText');
+        const btnSpinner = document.getElementById('btnSpinner');
+        btnText.classList.add('hidden');
+        btnSpinner.classList.remove('hidden');
+        
+        // Play sound
+        clinkSound.play().catch(console.error);
 
-            link.addEventListener('mouseleave', () => {
-                hoverBg.style.opacity = '0';
-            });
-        });
+        // Money drop animation
+        for(let i=0; i<10; i++) {
+            let coin = document.createElement('div');
+            coin.classList.add('coin');
+            coin.style.left = Math.random() * 100 + 'vw';
+            coin.style.animationDuration = (Math.random() * 1 + 1) + 's';
+            document.body.appendChild(coin);
+            setTimeout(() => coin.remove(), 2000);
+        }
+    });
 
-        menuBtn.addEventListener('click', toggleMenu);
-        closeBtn.addEventListener('click', toggleMenu);
-        backdrop.addEventListener('click', toggleMenu);
-    </script>
-</body>
-</html>
+    // Real-Time Progress Bar Logic (Task 14)
+    async function fetchProgress() {
+        try {
+            const res = await fetch("{{ url_for('get_progress') }}");
+            const data = await res.json();
+            
+            if(data.success) {
+                const fill = document.getElementById('progress-fill');
+                const text = document.getElementById('budget-text');
+                
+                const percent = Math.min((data.total_spent / data.monthly_limit) * 100, 100);
+                
+                text.innerHTML = `₹${data.total_spent} spent of ₹${data.monthly_limit} (${percent.toFixed(1)}%)`;
+                fill.style.width = percent + '%';
+                
+                // Color changes
+                if(percent < 50) fill.style.backgroundColor = 'lightgreen';
+                else if (percent < 90) fill.style.backgroundColor = 'gold';
+                else fill.style.backgroundColor = 'red';
+            }
+        } catch(e) {
+            console.error(e);
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', fetchProgress);
+</script>
+{% endblock %}

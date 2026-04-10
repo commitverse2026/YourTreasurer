@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+
+{% block head %}
+<style>
+    .expense-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 20px;
+        margin-top: 20px;
+    }
+    
+    .expense-card {
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        padding: 20px;
+        border-radius: 12px;
+        color: white;
+        /* Slide-in animation */
+        animation: slideInFromBottom 0.6s ease-out forwards;
+        opacity: 0;
+        transform: translateY(50px);
+    }
+    
+    @keyframes slideInFromBottom {
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .badge {
+        display: inline-block;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        margin-bottom: 10px;
+    }
+    .badge-loan { background: #ff9800; color: white; }
+    .badge-category { background: #2196f3; color: white; }
+    
+    .btn-group {
+        display: flex;
+        gap: 10px;
+        margin-top: 15px;
+    }
+    
+    .btn-danger { background: #f44336; border: none; padding: 6px 12px; border-radius: 4px; color: white; cursor: pointer; }
+    .btn-remind { background: #00bcd4; border: none; padding: 6px 12px; border-radius: 4px; color: white; cursor: pointer; }
+    .btn-return { background: #4caf50; border: none; padding: 6px 12px; border-radius: 4px; color: white; cursor: pointer; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="content-container">
+    <h1 class="title">My Expenses</h1>
+    <p class="subtitle">Real-time spend history and liabilities</p>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <ul class="flashes" id="flash-msgs" style="color: white; list-style: none; padding: 0;">
+            {% for category, message in messages %}
+                <li class="{{ category }}">{{ message }}</li>
+            {% endfor %}
+            </ul>
+        {% endif %}
+    {% endwith %}
+
+    <div class="expense-grid">
+        {% for exp in expenses %}
+        <div class="expense-card" style="animation-delay: {{ loop.index0 * 0.1 }}s;">
+            <span class="badge badge-category">{{ exp.category }}</span>
+            {% if exp.is_loan %}
+                <span class="badge badge-loan">Lent to {{ exp.friend_email }}</span>
+            {% endif %}
+            
+            <h2>₹{{ exp.amount }}</h2>
+            <p><small>{{ exp.date.strftime('%Y-%m-%d %H:%M') }}</small></p>
+            
+            {% if exp.secure_url %}
+            <a href="{{ exp.secure_url }}" target="_blank" style="color: lightblue;">View Receipt</a>
+            {% endif %}
+
+            <div class="btn-group">
+                <form action="{{ url_for('delete_expense', id=exp._id) }}" method="POST" style="margin:0;">
+                    <button type="submit" class="btn-danger">Delete</button>
+                </form>
+                
+                {% if exp.is_loan and not exp.returned %}
+                <form action="{{ url_for('remind_friend', id=exp._id) }}" method="POST" style="margin:0;">
+                    <button type="submit" class="btn-remind">Remind Friend</button>
+                </form>
+                <form action="{{ url_for('return_loan', id=exp._id) }}" method="POST" style="margin:0;">
+                    <button type="submit" class="btn-return" id="returnBtn-{{ exp._id }}">Returned</button>
+                </form>
+                {% elif exp.is_loan and exp.returned %}
+                <span style="color: lightgreen; font-weight: bold; align-self: center;">Returned ✓</span>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Asset Sounds
+    const crumpleSound = new Audio("{{ url_for('static', filename='audio/crumple.mp3') }}");
+    const whooshSound = new Audio("{{ url_for('static', filename='audio/whoosh.mp3') }}");
+    const kachingSound = new Audio("{{ url_for('static', filename='audio/kaching.mp3') }}");
+
+    document.addEventListener("DOMContentLoaded", () => {
+        // Detect flash messages to play sounds implicitly
+        const flashes = document.querySelectorAll('.flashes li');
+        flashes.forEach(flash => {
+            if (flash.classList.contains('success_delete')) {
+                crumpleSound.play().catch(e => console.log(e));
+            } else if (flash.classList.contains('success_remind')) {
+                whooshSound.play().catch(e => console.log(e));
+            } else if (flash.classList.contains('success_returned')) {
+                kachingSound.play().catch(e => console.log(e));
+                triggerConfetti();
+            }
+        });
+    });
+
+    // Simple Confetti effect for returns
+    function triggerConfetti() {
+        for(let i=0; i<50; i++) {
+            let conf = document.createElement('div');
+            conf.style.position = 'fixed';
+            conf.style.width = '10px';
+            conf.style.height = '10px';
+            conf.style.backgroundColor = ['red','blue','green','yellow','purple'][Math.floor(Math.random()*5)];
+            conf.style.top = '-10px';
+            conf.style.left = Math.random() * 100 + 'vw';
+            conf.style.zIndex = '9999';
+            conf.style.animation = `drop ${1 + Math.random()*2}s forwards`;
+            document.body.appendChild(conf);
+            setTimeout(() => conf.remove(), 3000);
+        }
+    }
+</script>
+{% endblock %}

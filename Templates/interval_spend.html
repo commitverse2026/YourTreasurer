@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+
+{% block head %}
+<style>
+    .interval-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 20px;
+        margin-top: 20px;
+    }
+    
+    .interval-card {
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        padding: 20px;
+        border-radius: 12px;
+        color: white;
+        transition: 0.3s;
+    }
+
+    .pulse-danger {
+        border: 2px solid red;
+        box-shadow: 0 0 15px red;
+        animation: pulseRed 1.5s infinite;
+    }
+
+    @keyframes pulseRed {
+        0% { box-shadow: 0 0 5px red; }
+        50% { box-shadow: 0 0 20px red; }
+        100% { box-shadow: 0 0 5px red; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="content-container">
+    <h1 class="title">Interval Spends</h1>
+    <p class="subtitle">Manage EMI, Rent, and Subscriptions</p>
+    
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <ul class="flashes" style="color: white;">
+            {% for category, message in messages %}
+                <li class="{{ category }}">{{ message }}</li>
+            {% endfor %}
+            </ul>
+        {% endif %}
+    {% endwith %}
+
+    <div class="glass-form-wrapper" style="margin-top: 20px; max-width: 600px;">
+        <form action="{{ url_for('add_interval_spend') }}" method="POST" class="glass-form">
+            <div class="form-group">
+                <label for="category">Title (EMI / Rent)</label>
+                <input type="text" id="category" name="category" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="amount">Amount (₹)</label>
+                <input type="number" id="amount" name="amount" step="0.01" required>
+            </div>
+
+            <div class="form-group">
+                <label for="due_date">Due Date</label>
+                <input type="date" id="due_date" name="due_date" required>
+            </div>
+
+            <div class="form-group">
+                <label for="remind_days">Remind me X days before</label>
+                <input type="number" id="remind_days" name="remind_days" value="3" min="1" max="14">
+            </div>
+
+            <button type="submit" class="submit-btn" style="margin-top:10px;">Add Recurring Spend</button>
+        </form>
+    </div>
+
+    <div class="interval-grid">
+        {% for due in dues %}
+        <div class="interval-card {% if due.days_left <= 3 and due.days_left >= 0 %}pulse-danger{% endif %}">
+            <h2>{{ due.category }}</h2>
+            <h3 style="color: gold;">₹{{ due.amount }}</h3>
+            <p>Due: {{ due.due_date.strftime('%Y-%m-%d') }} 
+                {% if due.days_left >= 0 %}
+                    (in {{ due.days_left }} days)
+                {% else %}
+                    (Overdue by {{ -due.days_left }} days!)
+                {% endif %}
+            </p>
+            <p><small>Remind: {{ due.remind_days }} days prior</small></p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
