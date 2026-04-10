@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Spending Analysis</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0a0a0f;
+      --surface:   #111118;
+      --border:    #1e1e2e;
+      --accent:    #e8ff47;
+      --accent2:   #ff6b35;
+      --muted:     #444466;
+      --text:      #e8e8f0;
+      --text-dim:  #7777aa;
+      --chart-day:   rgba(232, 255, 71, 0.85);
+      --chart-month: rgba(255, 107, 53, 0.85);
+      --chart-day-bg:   rgba(232, 255, 71, 0.08);
+      --chart-month-bg: rgba(255, 107, 53, 0.08);
+      --glow-day:   0 0 30px rgba(232,255,71,0.25);
+      --glow-month: 0 0 30px rgba(255,107,53,0.25);
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Mono', monospace;
+      overflow-x: hidden;
+    }
+
+    /* Grain overlay */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 999;
+      opacity: 0.6;
+    }
+
+    .wrapper {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 48px 24px 64px;
+      gap: 40px;
+    }
+
+    /* ── Header ── */
+    .header {
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .eyebrow {
+      font-size: 11px;
+      letter-spacing: 0.35em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+    }
+
+    .title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(48px, 8vw, 88px);
+      line-height: 1;
+      letter-spacing: 0.04em;
+      color: var(--text);
+    }
+
+    .title span {
+      color: var(--accent);
+    }
+
+    .subtitle {
+      font-size: 12px;
+      color: var(--text-dim);
+      letter-spacing: 0.1em;
+      margin-top: 4px;
+    }
+
+    /* ── Stats Bar ── */
+    .stats-bar {
+      display: flex;
+      gap: 2px;
+      background: var(--border);
+      border-radius: 4px;
+      overflow: hidden;
+      width: 100%;
+      max-width: 860px;
+    }
+
+    .stat-card {
+      flex: 1;
+      background: var(--surface);
+      padding: 20px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      transition: background 0.3s;
+    }
+    .stat-card:hover { background: #18181f; }
+
+    .stat-label {
+      font-size: 10px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+    }
+
+    .stat-value {
+      font-size: 24px;
+      font-weight: 500;
+      color: var(--text);
+      transition: color 0.4s;
+    }
+
+    .stat-delta {
+      font-size: 11px;
+      color: var(--text-dim);
+    }
+    .stat-delta.up   { color: #ff6b6b; }
+    .stat-delta.down { color: #6bffb8; }
+
+    /* ── Card ── */
+    .card {
+      width: 100%;
+      max-width: 860px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      overflow: hidden;
+      box-shadow: 0 24px 80px rgba(0,0,0,0.5);
+      transition: box-shadow 0.4s;
+    }
+
+    .card.mode-day   { box-shadow: var(--glow-day),   0 24px 80px rgba(0,0,0,0.5); }
+    .card.mode-month { box-shadow: var(--glow-month),  0 24px 80px rgba(0,0,0,0.5); }
+
+    /* ── Card Header ── */
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px 28px;
+      border-bottom: 1px solid var(--border);
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .card-title-block { display: flex; flex-direction: column; gap: 4px; }
+    .card-title { font-size: 13px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text); font-weight: 500; }
+    .card-meta  { font-size: 11px; color: var(--text-dim); letter-spacing: 0.06em; }
+
+    /* ── Toggle ── */
+    .toggle-wrap {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .toggle-btn {
+      position: relative;
+      z-index: 1;
+      padding: 9px 22px;
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      background: transparent;
+      border: none;
+      color: var(--text-dim);
+      cursor: pointer;
+      transition: color 0.3s;
+      user-select: none;
+    }
+
+    .toggle-btn.active { color: var(--bg); }
+    .toggle-btn:hover:not(.active) { color: var(--text); }
+
+    .toggle-slider {
+      position: absolute;
+      top: 3px;
+      bottom: 3px;
+      left: 3px;
+      width: calc(50% - 3px);
+      border-radius: 2px;
+      background: var(--accent);
+      transition: transform 0.35s cubic-bezier(0.34,1.56,0.64,1), background 0.35s;
+      z-index: 0;
+    }
+
+    .toggle-wrap.mode-month .toggle-slider {
+      transform: translateX(100%);
+      background: var(--accent2);
+    }
+
+    /* ── Chart Container ── */
+    .chart-wrap {
+      padding: 28px 28px 20px;
+      position: relative;
+    }
+
+    canvas { display: block; }
+
+    /* ── Fade overlay during transition ── */
+    .chart-overlay {
+      position: absolute;
+      inset: 0;
+      background: var(--surface);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.18s;
+    }
+    .chart-overlay.flash { opacity: 0.6; }
+
+    /* ── Legend ── */
+    .legend {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      padding: 0 28px 22px;
+      flex-wrap: wrap;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 11px;
+      color: var(--text-dim);
+      letter-spacing: 0.08em;
+    }
+
+    .legend-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    /* ── Footer ── */
+    .footer {
+      font-size: 10px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    /* ── Mode badge ── */
+    .mode-badge {
+      font-size: 10px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      padding: 4px 10px;
+      border-radius: 2px;
+      background: color-mix(in srgb, var(--accent) 12%, transparent);
+      color: var(--accent);
+      border: 1px solid color-mix(in srgb, var(--accent) 25%, transparent);
+      transition: background 0.35s, color 0.35s, border-color 0.35s;
+      white-space: nowrap;
+    }
+    .mode-badge.month {
+      background: color-mix(in srgb, var(--accent2) 12%, transparent);
+      color: var(--accent2);
+      border-color: color-mix(in srgb, var(--accent2) 25%, transparent);
+    }
+
+    @media (max-width: 520px) {
+      .card-header { flex-direction: column; align-items: flex-start; }
+      .stats-bar   { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+<div class="wrapper">
+
+  <!-- Header -->
+  <header class="header">
+    <p class="eyebrow">Financial Intelligence</p>
+    <h1 class="title">SPEND<span>ING</span></h1>
+    <p class="subtitle">Real-time expenditure dashboard · live data simulation</p>
+  </header>
+
+  <!-- Stats -->
+  <div class="stats-bar" id="statsBar">
+    <div class="stat-card">
+      <span class="stat-label">Today Total</span>
+      <span class="stat-value" id="statToday">—</span>
+      <span class="stat-delta up" id="statTodayDelta">—</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-label">Month Total</span>
+      <span class="stat-value" id="statMonth">—</span>
+      <span class="stat-delta down" id="statMonthDelta">—</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-label">Peak Hour</span>
+      <span class="stat-value" id="statPeakHour">—</span>
+      <span class="stat-delta" id="statPeakHourVal">—</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-label">Peak Day</span>
+      <span class="stat-value" id="statPeakDay">—</span>
+      <span class="stat-delta" id="statPeakDayVal">—</span>
+    </div>
+  </div>
+
+  <!-- Chart Card -->
+  <div class="card mode-day" id="mainCard">
+    <div class="card-header">
+      <div class="card-title-block">
+        <span class="card-title">Expenditure Overview</span>
+        <span class="card-meta" id="cardMeta">Hourly breakdown · Today</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+        <span class="mode-badge" id="modeBadge">Day View</span>
+        <div class="toggle-wrap" id="toggleWrap">
+          <div class="toggle-slider"></div>
+          <button class="toggle-btn active" id="btnDay"  onclick="setMode('day')">Day</button>
+          <button class="toggle-btn"        id="btnMonth" onclick="setMode('month')">Month</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="chart-wrap">
+      <div class="chart-overlay" id="chartOverlay"></div>
+      <canvas id="spendingChart" height="320"></canvas>
+    </div>
+
+    <div class="legend" id="chartLegend">
+      <div class="legend-item">
+        <div class="legend-dot" style="background:var(--accent)"></div>
+        <span>Spending (₹)</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-dot" style="background:rgba(232,255,71,0.25);border:1px solid var(--accent)"></div>
+        <span>Average line</span>
+      </div>
+    </div>
+  </div>
+
+  <p class="footer">Data updates live · built with Chart.js</p>
+</div>
+
+<script>
+/* ══════════════════════════════════════════════
+   DATA GENERATION
+══════════════════════════════════════════════ */
+
+const fmt = v => '₹' + v.toLocaleString('en-IN', {maximumFractionDigits: 0});
+
+function generateHourlyData() {
+  const now = new Date();
+  const currentHour = now.getHours();
+  const patterns = [
+    5,4,3,2,2,3,8,18,25,30,28,32,   // 0–11 AM
+    38,35,20,18,22,30,42,48,35,22,15,8 // 12–11 PM
+  ];
+  return patterns.map((base, h) => {
+    if (h > currentHour) return null; // future hours are null
+    const jitter = (Math.random() - 0.5) * base * 0.6;
+    return Math.max(0, Math.round((base + jitter) * 12));
+  });
+}
+
+function generateMonthlyData() {
+  const days = [];
+  for (let i = 29; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    const isWeekend = d.getDay() === 0 || d.getDay() === 6;
+    const base = isWeekend ? 1800 : 1200;
+    days.push(Math.round(base + (Math.random() - 0.3) * 900));
+  }
+  return days;
+}
+
+function hourLabels() {
+  return Array.from({length:24}, (_,h) => {
+    const ampm = h < 12 ? 'AM' : 'PM';
+    const hh   = h % 12 || 12;
+    return `${hh}${ampm}`;
+  });
+}
+
+function monthLabels() {
+  return Array.from({length:30}, (_,i) => {
+    const d = new Date();
+    d.setDate(d.getDate() - (29 - i));
+    return d.toLocaleDateString('en-IN', {day:'numeric', month:'short'});
+  });
+}
+
+/* ══════════════════════════════════════════════
+   CHART SETUP
+══════════════════════════════════════════════ */
+
+const ctx = document.getElementById('spendingChart').getContext('2d');
+
+let currentMode = 'day';
+let dayData     = generateHourlyData();
+let monthData   = generateMonthlyData();
+
+function avg(arr) {
+  const valid = arr.filter(v => v !== null && v !== undefined);
+  return valid.length ? valid.reduce((a,b)=>a+b,0)/valid.length : 0;
+}
+
+function buildDatasets(mode) {
+  const isDay   = mode === 'day';
+  const raw     = isDay ? dayData   : monthData;
+  const col     = isDay ? 'rgba(232,255,71,0.85)' : 'rgba(255,107,53,0.85)';
+  const colBg   = isDay ? 'rgba(232,255,71,0.08)' : 'rgba(255,107,53,0.08)';
+  const colAvg  = isDay ? 'rgba(232,255,71,0.4)'  : 'rgba(255,107,53,0.4)';
+  const mean    = avg(raw);
+  const avgLine = raw.map(v => v === null ? null : Math.round(mean));
+
+  return {
+    labels: isDay ? hourLabels() : monthLabels(),
+    datasets: [
+      {
+        label: isDay ? 'Hourly Spend (₹)' : 'Daily Spend (₹)',
+        data: raw,
+        borderColor: col,
+        backgroundColor: ctx => {
+          const chart = ctx.chart;
+          const {top, bottom} = chart.chartArea || {};
+          if (!top) return colBg;
+          const grad = chart.ctx.createLinearGradient(0, top, 0, bottom);
+          grad.addColorStop(0, colBg.replace('0.08','0.22'));
+          grad.addColorStop(1, colBg.replace('0.08','0.00'));
+          return grad;
+        },
+        fill: true,
+        tension: 0.42,
+        borderWidth: 2,
+        pointRadius: raw.map(v => v === null ? 0 : 3),
+        pointBackgroundColor: col,
+        pointBorderColor: '#0a0a0f',
+        pointBorderWidth: 1.5,
+        pointHoverRadius: 6,
+        spanGaps: false,
+      },
+      {
+        label: 'Average (₹)',
+        data: avgLine,
+        borderColor: colAvg,
+        backgroundColor: 'transparent',
+        fill: false,
+        tension: 0,
+        borderWidth: 1.5,
+        borderDash: [6, 4],
+        pointRadius: 0,
+        pointHoverRadius: 0,
+        spanGaps: false,
+      }
+    ]
+  };
+}
+
+Chart.defaults.color = '#7777aa';
+Chart.defaults.font.family = "'DM Mono', monospace";
+Chart.defaults.font.size   = 11;
+
+const chart = new Chart(ctx, {
+  type: 'line',
+  data: buildDatasets('day'),
+  options: {
+    responsive: true,
+    maintainAspectRatio: true,
+    interaction: { mode: 'index', intersect: false },
+    animation: {
+      duration: 600,
+      easing: 'easeInOutQuart',
+    },
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        backgroundColor: '#111118',
+        borderColor: '#1e1e2e',
+        borderWidth: 1,
+        padding: 12,
+        titleFont: { size: 11, weight: '500', family: "'DM Mono', monospace" },
+        bodyFont:  { size: 12, family: "'DM Mono', monospace" },
+        callbacks: {
+          label: ctx => {
+            if (ctx.raw === null || ctx.raw === undefined) return '';
+            const label = ctx.dataset.label?.includes('Average') ? 'Avg' : 'Spend';
+            return `  ${label}: ${fmt(ctx.raw)}`;
+          }
+        }
+      }
+    },
+    scales: {
+      x: {
+        grid:   { color: 'rgba(255,255,255,0.04)', drawTicks: false },
+        border: { display: false },
+        ticks:  { maxRotation: 0, padding: 8, color: '#555577' },
+      },
+      y: {
+        grid:   { color: 'rgba(255,255,255,0.04)', drawTicks: false },
+        border: { display: false },
+        ticks: {
+          padding: 10,
+          color: '#555577',
+          callback: v => '₹' + (v >= 1000 ? (v/1000).toFixed(1)+'k' : v)
+        },
+        beginAtZero: true,
+      }
+    }
+  }
+});
+
+/* ══════════════════════════════════════════════
+   STATS POPULATION
+══════════════════════════════════════════════ */
+
+function populateStats() {
+  const validDay   = dayData.filter(v=>v!==null);
+  const totalToday = validDay.reduce((a,b)=>a+b,0);
+  const totalMonth = monthData.reduce((a,b)=>a+b,0);
+
+  const peakHourIdx = dayData.reduce((best,v,i) => v !== null && v > (dayData[best]??0) ? i : best, 0);
+  const peakDayIdx  = monthData.reduce((best,v,i) => v > monthData[best] ? i : best, 0);
+  const peakDayDate = (() => { const d=new Date(); d.setDate(d.getDate()-(29-peakDayIdx)); return d.toLocaleDateString('en-IN',{day:'numeric',month:'short'}); })();
+
+  document.getElementById('statToday').textContent     = fmt(totalToday);
+  document.getElementById('statTodayDelta').textContent = `↑ ${((totalToday/totalMonth)*100).toFixed(1)}% of month`;
+  document.getElementById('statTodayDelta').className  = 'stat-delta up';
+
+  document.getElementById('statMonth').textContent      = fmt(totalMonth);
+  document.getElementById('statMonthDelta').textContent = `↓ ${fmt(Math.round(totalMonth/30))} / day avg`;
+  document.getElementById('statMonthDelta').className   = 'stat-delta down';
+
+  const hh = peakHourIdx; const ampm = hh<12?'AM':'PM'; const label = `${hh%12||12}${ampm}`;
+  document.getElementById('statPeakHour').textContent   = label;
+  document.getElementById('statPeakHourVal').textContent = fmt(dayData[peakHourIdx]);
+
+  document.getElementById('statPeakDay').textContent    = peakDayDate;
+  document.getElementById('statPeakDayVal').textContent = fmt(monthData[peakDayIdx]);
+}
+
+populateStats();
+
+/* ══════════════════════════════════════════════
+   TOGGLE LOGIC
+══════════════════════════════════════════════ */
+
+function setMode(mode) {
+  if (mode === currentMode) return;
+  currentMode = mode;
+
+  const overlay = document.getElementById('chartOverlay');
+  const card    = document.getElementById('mainCard');
+  const wrap    = document.getElementById('toggleWrap');
+  const badge   = document.getElementById('modeBadge');
+  const meta    = document.getElementById('cardMeta');
+
+  // Flash transition
+  overlay.classList.add('flash');
+
+  setTimeout(() => {
+    const built = buildDatasets(mode);
+
+    chart.data.labels = built.labels;
+    chart.data.datasets[0].label           = built.datasets[0].label;
+    chart.data.datasets[0].data            = built.datasets[0].data;
+    chart.data.datasets[0].borderColor     = built.datasets[0].borderColor;
+    chart.data.datasets[0].backgroundColor = built.datasets[0].backgroundColor;
+    chart.data.datasets[0].pointRadius     = built.datasets[0].pointRadius;
+    chart.data.datasets[0].pointBackgroundColor = built.datasets[0].pointBackgroundColor;
+
+    chart.data.datasets[1].data        = built.datasets[1].data;
+    chart.data.datasets[1].borderColor = built.datasets[1].borderColor;
+
+    chart.update();
+
+    overlay.classList.remove('flash');
+
+    if (mode === 'day') {
+      card.className  = 'card mode-day';
+      wrap.className  = 'toggle-wrap';
+      badge.textContent = 'Day View';
+      badge.className = 'mode-badge';
+      meta.textContent = 'Hourly breakdown · Today';
+      document.getElementById('btnDay').classList.add('active');
+      document.getElementById('btnMonth').classList.remove('active');
+    } else {
+      card.className  = 'card mode-month';
+      wrap.className  = 'toggle-wrap mode-month';
+      badge.textContent = 'Month View';
+      badge.className = 'mode-badge month';
+      meta.textContent = 'Daily breakdown · Last 30 days';
+      document.getElementById('btnMonth').classList.add('active');
+      document.getElementById('btnDay').classList.remove('active');
+    }
+  }, 180);
+}
+
+/* ══════════════════════════════════════════════
+   LIVE DATA REFRESH (simulated)
+══════════════════════════════════════════════ */
+
+setInterval(() => {
+  // Gently update the current hour's value
+  const h = new Date().getHours();
+  if (dayData[h] !== null) {
+    dayData[h] = Math.max(0, dayData[h] + Math.round((Math.random()-0.5)*80));
+  }
+  if (currentMode === 'day') {
+    chart.data.datasets[0].data = dayData;
+    const mean = avg(dayData);
+    chart.data.datasets[1].data = dayData.map(v => v===null ? null : Math.round(mean));
+    chart.update('none'); // no animation for live tick
+  }
+  populateStats();
+}, 4000);
+</script>
+</body>
+</html>
