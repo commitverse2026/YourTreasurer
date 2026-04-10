@@ -106,9 +106,9 @@
 {% block scripts %}
 <script>
     // Asset Sounds
-    const crumpleSound = new Audio("{{ url_for('static', filename='audio/crumple.mp3') }}");
-    const whooshSound = new Audio("{{ url_for('static', filename='audio/whoosh.mp3') }}");
-    const kachingSound = new Audio("{{ url_for('static', filename='audio/kaching.mp3') }}");
+    const crumpleSound = new Audio("{{ url_for('static', filename='audio/crumple.wav') }}");
+    const whooshSound = new Audio("{{ url_for('static', filename='audio/whoosh.wav') }}");
+    const kachingSound = new Audio("{{ url_for('static', filename='audio/kaching.wav') }}");
 
     document.addEventListener("DOMContentLoaded", () => {
         // Detect flash messages to play sounds implicitly

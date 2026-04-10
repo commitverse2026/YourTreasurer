@@ -113,7 +113,7 @@
     document.addEventListener("DOMContentLoaded", () => {
         const flashes = document.querySelectorAll('.flashes .success');
         if (flashes.length > 0) {
-            const unlockSound = new Audio("{{ url_for('static', filename='audio/unlock.mp3') }}");
+            const unlockSound = new Audio("{{ url_for('static', filename='audio/unlock.wav') }}");
             unlockSound.play().catch(e => console.log("Audio play prevented:", e));
         }
     });
