@@ -94,6 +94,20 @@ def send_async_email(app, msg):
             print(f"Background Mail Error: {e}")
 
 
+def send_cycle_reset_email(user_name, user_email=None):
+    """Send notification when 30-day cycle resets."""
+    if not user_email:
+        # If no email, perhaps skip or use a default
+        return
+    msg = Message(
+        "YourTreasurer: Monthly Budget Cycle Reset",
+        sender=app.config["MAIL_USERNAME"],
+        recipients=[user_email],
+    )
+    msg.body = f"Hi {user_name},\n\nYour 30-day budget cycle has reset. Your current spend has been reset to 0, and you can set a new monthly limit.\n\nBest,\nYourTreasurer Team"
+    send_async_email(app, msg)
+
+
 def users_collection():
     if mongo is None:
         raise ConfigurationError(MONGO_INIT_ERROR or "MongoDB client is not initialized.")
@@ -263,12 +277,25 @@ def maybe_reset_cycle(user_doc):
         return user_doc
 
     if now > start_date + timedelta(days=30):
+        # Archive expenses before resetting
+        try:
+            expenses = list(daily_expenses_collection().find({"created_by": user_doc["name"], "created_at": {"$gte": start_date}}))
+            if expenses:
+                archived_collection = mongo.cx[app.config["MONGO_DBNAME"]]["archived_expenses"]
+                for exp in expenses:
+                    exp["archived_at"] = now
+                    archived_collection.insert_one(exp)
+                daily_expenses_collection().delete_many({"created_by": user_doc["name"], "created_at": {"$gte": start_date}})
+        except PyMongoError:
+            pass  # Ignore archiving errors
+
         users_collection().update_one(
             {"_id": user_doc["_id"]},
-            {"$set": {"current_spend": 0, "start_date": now}},
+            {"$set": {"current_spend": 0, "start_date": now, "monthly_limit": 0}},  # Reset monthly_limit to prompt user
         )
         user_doc["current_spend"] = 0
         user_doc["start_date"] = now
+        user_doc["monthly_limit"] = 0
     return user_doc
 
 
