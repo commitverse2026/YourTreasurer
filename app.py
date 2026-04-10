@@ -3,6 +3,7 @@ import json
 import re
 from datetime import datetime, timedelta
 from uuid import uuid4
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 import cloudinary
 import cloudinary.uploader
@@ -12,7 +13,7 @@ from dotenv import load_dotenv
 from flask import Flask, jsonify, redirect, render_template, request, session, url_for
 from flask_mail import Mail
 from flask_pymongo import PyMongo
-from pymongo.errors import PyMongoError
+from pymongo.errors import ConfigurationError, PyMongoError
 from werkzeug.security import check_password_hash, generate_password_hash
 
 load_dotenv()
@@ -30,12 +31,37 @@ cloudinary.config(
 )
 
 # 2. MongoDB & Mail Setup
-app.config["MONGO_URI"] = os.environ.get(
-    "MONGO_URI",
-    "mongodb://localhost:27017/yourtreasurer?serverSelectionTimeoutMS=1200&connectTimeoutMS=1200&socketTimeoutMS=1200",
-)
+def build_mongo_uri_with_timeouts(raw_uri):
+    split_result = urlsplit(raw_uri)
+    query = dict(parse_qsl(split_result.query, keep_blank_values=True))
+    timeout_defaults = {
+        "serverSelectionTimeoutMS": "2500",
+        "connectTimeoutMS": "2500",
+        "socketTimeoutMS": "2500",
+    }
+    for key, value in timeout_defaults.items():
+        query.setdefault(key, value)
+    new_query = urlencode(query)
+    return urlunsplit(
+        (
+            split_result.scheme,
+            split_result.netloc,
+            split_result.path,
+            new_query,
+            split_result.fragment,
+        )
+    )
+
+
+raw_mongo_uri = os.environ.get("MONGO_URI", "mongodb://localhost:27017/yourtreasurer")
+app.config["MONGO_URI"] = build_mongo_uri_with_timeouts(raw_mongo_uri)
 app.config["MONGO_DBNAME"] = os.environ.get("MONGO_DBNAME", "yourtreasurer")
-mongo = PyMongo(app)
+MONGO_INIT_ERROR = ""
+try:
+    mongo = PyMongo(app)
+except Exception as error:
+    mongo = None
+    MONGO_INIT_ERROR = str(error)
 
 app.config["MAIL_SERVER"] = "smtp.gmail.com"
 app.config["MAIL_PORT"] = 587
@@ -68,6 +94,8 @@ def send_async_email(app, msg):
 
 
 def users_collection():
+    if mongo is None:
+        raise ConfigurationError(MONGO_INIT_ERROR or "MongoDB client is not initialized.")
     db_name = app.config["MONGO_DBNAME"]
     return mongo.cx[db_name]["users"]
 
@@ -88,6 +116,11 @@ def is_name_valid(name):
 
 def is_mongo_available():
     global MONGO_AVAILABLE, MONGO_LAST_CHECK, MONGO_LAST_ERROR
+    if mongo is None:
+        MONGO_AVAILABLE = False
+        MONGO_LAST_ERROR = MONGO_INIT_ERROR or "MongoDB client is not initialized."
+        MONGO_LAST_CHECK = datetime.utcnow()
+        return False
     now = datetime.utcnow()
     if MONGO_LAST_CHECK and (now - MONGO_LAST_CHECK).total_seconds() < 30:
         return bool(MONGO_AVAILABLE)
@@ -216,24 +249,9 @@ def home():
     return render_template('index.html')
 
 @app.route('/my_profile')
+@app.route('/profile')
 def my_profile():
-    user_data = None
-    if session.get("user_id"):
-        if session["user_id"].startswith("local:"):
-            local_user_id = session["user_id"].replace("local:", "", 1)
-            user_doc = get_local_user_by_id(local_user_id)
-            if user_doc:
-                user_doc = maybe_reset_cycle_local(user_doc)
-                user_data = build_user_payload(user_doc)
-        elif is_mongo_available():
-            try:
-                user_doc = users_collection().find_one({"_id": ObjectId(session["user_id"])})
-                if user_doc:
-                    user_doc = maybe_reset_cycle(user_doc)
-                    user_data = build_user_payload(user_doc)
-            except (InvalidId, PyMongoError):
-                user_data = None
-    return render_template("profile.html", user=user_data)
+    return render_template("profile.html")
 
 
 @app.route("/login", methods=["POST"])
@@ -460,6 +478,39 @@ def db_status():
             "fallback_file_present": os.path.exists(LOCAL_USERS_FILE),
             "last_check_utc": MONGO_LAST_CHECK.isoformat() if MONGO_LAST_CHECK else None,
             "last_error": None if connected else MONGO_LAST_ERROR,
+        }
+    )
+
+
+@app.route("/api/my_profile")
+@app.route("/api/profile")
+def api_my_profile():
+    if not session.get("user_id"):
+        return jsonify({"success": False, "message": "Not logged in."}), 401
+
+    user_doc = None
+    if session["user_id"].startswith("local:"):
+        local_user_id = session["user_id"].replace("local:", "", 1)
+        user_doc = get_local_user_by_id(local_user_id)
+        if user_doc:
+            user_doc = maybe_reset_cycle_local(user_doc)
+    else:
+        if not is_mongo_available():
+            return jsonify({"success": False, "message": "Database unavailable."}), 503
+        try:
+            user_doc = users_collection().find_one({"_id": ObjectId(session["user_id"])})
+            if user_doc:
+                user_doc = maybe_reset_cycle(user_doc)
+        except (InvalidId, PyMongoError):
+            return jsonify({"success": False, "message": "Profile fetch failed."}), 500
+
+    if not user_doc:
+        return jsonify({"success": False, "message": "User not found."}), 404
+
+    return jsonify(
+        {
+            "success": True,
+            "user": build_user_payload(user_doc),
         }
     )
 

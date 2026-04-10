@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Expenses | YourTreasurer</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        .card { max-width: 760px; margin: auto; padding: 28px; border-radius: 20px; background: rgba(255,255,255,0.9); box-shadow: 0 15px 35px rgba(15,40,84,.12); text-align: left; }
+        .card h1 { color: var(--navy-dark); margin-bottom: 10px; }
+        .card p { color: var(--blue-mid); }
+    </style>
+</head>
+<body>
+    <div class="brand-logo-top"><a href="/"><img src="{{ url_for('static', filename='images/logo.png') }}" alt="Logo"></a></div>
+    <button class="menu-trigger" id="menu-btn"><span>Menu</span></button>
+    <div class="menu-backdrop" id="menu-backdrop"></div>
+    <nav id="side-nav" class="side-nav">
+        <button class="close-btn" id="close-btn">&times;</button>
+        <div class="nav-links">
+            <a href="/">Home</a><a href="/my_profile">My Profile</a><a href="/my_expenses" class="active">My Expenses</a>
+            <a href="/analysis">Analysis</a><a href="/interval_spend">Interval Spend</a><a href="/about_us">About Us</a>
+        </div>
+    </nav>
+    <div class="dynamic-bg" style="background-image: url('{{ url_for('static', filename='images/expenses.avif') }}');"></div>
+    <div class="main-layout-wrapper"><section class="card"><h1>My Expenses</h1><p>Expenses page is active and ready for expense listing integration.</p></section></div>
+    <footer class="common-footer">YourTreasurer &copy; 2026 | Helping Hand</footer>
+    <script>
+        const menuBtn=document.getElementById('menu-btn'),closeBtn=document.getElementById('close-btn'),sideNav=document.getElementById('side-nav'),backdrop=document.getElementById('menu-backdrop');
+        function toggleMenu(){sideNav.classList.toggle('open');backdrop.classList.toggle('active');}
+        menuBtn.addEventListener('click',toggleMenu);closeBtn.addEventListener('click',toggleMenu);backdrop.addEventListener('click',toggleMenu);
+    </script>
+</body>
+</html>
