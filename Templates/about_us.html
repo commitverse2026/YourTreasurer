@@ -7,7 +7,6 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
     <style>
-        /* Specific overrides for the About Us content readability */
         .about-section {
             max-width: 800px;
             margin: auto;
@@ -31,10 +30,7 @@
             font-size: 1.1rem;
             margin-bottom: 20px;
         }
-        .feature-list {
-            list-style: none;
-            padding: 0;
-        }
+        .feature-list { list-style: none; padding: 0; }
         .feature-list li {
             margin-bottom: 10px;
             padding-left: 25px;
@@ -50,7 +46,7 @@
 </head>
 <body>
     <div class="brand-logo-top">
-        <a href="/"><img src="{{ url_for('static', filename='images/logo.png') }}" alt="Logo"></a>
+        <a href="/"><img src="{{ url_for('static', filename='images/logo.png') }}" alt="Logo" onerror="this.style.display='none'"></a>
     </div>
 
     <button class="menu-trigger" id="menu-btn"><span>☰ Menu</span></button>
@@ -65,10 +61,11 @@
             <a href="/analysis">Analysis</a>
             <a href="/interval_spend">Interval Spend</a>
             <a href="/about_us" class="active">About Us</a>
+            <a href="/logout" style="opacity:0.4; font-size:1rem;">Logout</a>
         </div>
     </nav>
 
-    <div class="dynamic-bg" style="background-image: url('{{ url_for('static', filename='images/bg.svg') }}');"></div>
+    <div class="dynamic-bg" style="background: linear-gradient(135deg, #BDE8F5 0%, #e8f4fd 100%);"></div>
 
     <div class="main-layout-wrapper">
         <div class="about-section">
@@ -79,7 +76,7 @@
             <p class="about-text">
                 Designed specifically for the campus ecosystem, we don't just track numbers; we manage relationships and liabilities. From splitting canteen bills with friends to ensuring your hostel rent is paid on time, YourTreasurer acts as your personal digital CFO.
             </p>
-            
+
             <h2 class="about-title" style="font-size: 1.8rem;">Core Pillars</h2>
             <ul class="feature-list">
                 <li><strong>Proactive Alerts:</strong> We notify you before you hit your limit, not after.</li>
