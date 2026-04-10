@@ -82,6 +82,21 @@ PASSWORD_RULES_TEXT = (
 )
 NAME_RULES_TEXT = "Name must contain only letters and spaces."
 
+
+def ensure_local_json_file(file_path, default_value):
+    if os.path.exists(file_path):
+        return
+    try:
+        with open(file_path, "w", encoding="utf-8") as file:
+            json.dump(default_value, file, indent=2)
+    except OSError:
+        # Keep app startup resilient even if filesystem is temporarily unavailable.
+        pass
+
+
+ensure_local_json_file(LOCAL_USERS_FILE, [])
+ensure_local_json_file(LOCAL_EXPENSES_FILE, [])
+
 # --- ASYNC BACKGROUND TASKS ---
 
 def send_async_email(app, msg):
