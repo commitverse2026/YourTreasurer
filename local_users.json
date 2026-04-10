@@ -1,0 +1,98 @@
+[
+  {
+    "_id": "2ac3309e-a767-413f-ad78-942957a79f46",
+    "name": "demo_local_user",
+    "password": "scrypt:32768:8:1$oUiYl7XsBlpvprIq$f2fe19b9fdbead0e96e0c1fd3a9bee93a5fa402adb82fca029b59962fdb81aa5f3779c63066ad195f87f216a79c08737854c7bc326215e8342b1c6873cc41bbb",
+    "monthly_limit": 0.0,
+    "current_spend": 0.0,
+    "start_date": "2026-04-10T05:04:26.607766"
+  },
+  {
+    "_id": "9e2ce068-051e-4603-be04-8931d3f69a70",
+    "name": "demo_local_user",
+    "password": "scrypt:32768:8:1$KdV6pPXYxnpmWDbh$fa4dc8121553181fd46260e7236519d7670301c8ce8c5de6827bb73c8caeb8a707aa7bfe11b6f419a9377fb9ec38fb3cbfcedcac3bc040a4c7478a6e3d73317c",
+    "monthly_limit": 4500.0,
+    "current_spend": 0.0,
+    "start_date": "2026-04-10T05:04:26.629233"
+  },
+  {
+    "_id": "5f1ed105-ba5f-4d27-8930-029b1815ee45",
+    "name": "live_local_user",
+    "password": "scrypt:32768:8:1$IOrzhkOZ03fC09SP$8567ac70530ebb9443c40861028facbff77371cc21a5acb52097f4ceb1a04b48ee0f656e99912ff83cc743fe39aa87fa7c67e707ad88138717b3487fa3908fca",
+    "monthly_limit": 3000.0,
+    "current_spend": 0.0,
+    "start_date": "2026-04-10T05:05:27.891686"
+  },
+  {
+    "_id": "8c49122c-4f7f-42e7-a55a-8f30b44cf438",
+    "name": "live_local_user2",
+    "password": "scrypt:32768:8:1$xQvFOszPyiPPg7xW$cd013f408f7a8ef956746acf7a461565c7e7f222c02edf87a9e07b7965c6a39df623db3ea7cfc4bd4e8730a2301e1572163524e089d3b85860941115ed39ba85",
+    "monthly_limit": 3000.0,
+    "current_spend": 0.0,
+    "start_date": "2026-04-10T05:06:15.511465"
+  },
+  {
+    "_id": "a58abe45-dc6a-4bd9-ae8d-5c374f666ff9",
+    "name": "live_local_user3",
+    "password": "scrypt:32768:8:1$xvMbSXBmFu7OKfBl$89b1ec5585bc6fc819ee41a61b94ffa1361ee4c18e8db6b6a41c50ddbc7a37204ab793c77a220f43e1082bc3d70bcd6fd13938c398f8177a576c2c23e5480d96",
+    "monthly_limit": 3100.0,
+    "current_spend": 0.0,
+    "start_date": "2026-04-10T05:06:26.820491"
+  },
+  {
+    "_id": "f21f51c2-9bc0-4b59-a82a-fb15a84182f4",
+    "name": "Asmi",
+    "password": "scrypt:32768:8:1$QWLsBSLglnyBlkgS$749d8bee17082e78f221cc5c587a80b29a43da597b0fd024ea638fc6a60b3e2c50c6b4a36ea573bd3ff870d67d7fbbb2c41a8ecf3617f2159b1a0ff448355874",
+    "monthly_limit": 0.0,
+    "current_spend": 0.0,
+    "start_date": "2026-04-10T05:07:35.431224"
+  },
+  {
+    "_id": "b36ee71f-9261-4823-a14a-3470d2f22e1a",
+    "name": "atlas_seed_user_1",
+    "password": "scrypt:32768:8:1$9h4QgyMO3CYbXD00$e9c00212e9c3e46a289355b0489a9086a2bc89f9dff7ea2f7b59c386f3925fb3d91439f1ed50bdad7ca457d78e107df82b74b955cb4fb7df8a99a4143af92a42",
+    "monthly_limit": 0.0,
+    "current_spend": 0.0,
+    "start_date": "2026-04-10T05:44:00.753350"
+  },
+  {
+    "_id": "5f144ba1-8e11-4a79-9369-269f865b4a25",
+    "name": "RouteTestUser",
+    "password": "scrypt:32768:8:1$6U9O1CuivIIDK1cl$ade3ed4807220cdbab85488e89d98cd34b3b95b5d363c79d23e3b2794e4469fc0baab83a2a63cedadf3fe0d093228929aac217b34949f942b2da25e5e86c0446",
+    "monthly_limit": 3500.0,
+    "current_spend": 0.0,
+    "start_date": "2026-04-10T06:44:04.121993"
+  },
+  {
+    "_id": "897f3ac5-473f-4b3f-8a61-0917aa75dc3d",
+    "name": "qauserxname",
+    "password": "scrypt:32768:8:1$33gDPoVvePDITYK7$c1413adafdb67e0e949f42dfb5331f6ea506765bd39c2fc761542c9e0eac751a5eb34032b58ef9d0d0155673b2c7537923d4ed596f8258cad7d9ed4ff7ef75a4",
+    "monthly_limit": 4321.0,
+    "current_spend": 0.0,
+    "start_date": "2026-04-10T06:46:59.943998"
+  },
+  {
+    "_id": "ed896ce0-1129-408e-a94a-67c982341b44",
+    "name": "qatestcuser",
+    "password": "scrypt:32768:8:1$lg7MpGF0sL6GmFFy$2b5607ec535de9fd499f93686a7eb32d6a8a9f259c6c665e9a7b2e819381732947e36cc02560836487eb157bb4be2989e2d86093c88025567f2eecf8a392654c",
+    "monthly_limit": 4321.0,
+    "current_spend": 0.0,
+    "start_date": "2026-04-10T06:49:54.825580"
+  },
+  {
+    "_id": "64c063ac-857e-4b69-b737-00dadf43a3fb",
+    "name": "qasnfnqqan",
+    "password": "scrypt:32768:8:1$AtVQfM8LsNNLoIOU$bd23dbed84502a89561d9c860278408d800be462d63c5b6dbdf90b0e7293d42aa4fd13ef27e86732886755138ee0c143b807d1d95ae96a02dbe8a9dbc4891b74",
+    "monthly_limit": 4321.0,
+    "current_spend": 0.0,
+    "start_date": "2026-04-10T06:50:07.846918"
+  },
+  {
+    "_id": "be37a482-97c1-4ab7-95fc-e0b973d8bc65",
+    "name": "Durvesh",
+    "password": "scrypt:32768:8:1$cDIpzhEHX4JDI9YY$d6e44cfbb8ec5372a3b3491f9a558f044de9b2dd32ecfd7eb6aacb9ea87960bbb3c80ed810a3c09d8659b0bba39f08330a30a92abb48265ad11c947a661e914d",
+    "monthly_limit": 1200.0,
+    "current_spend": 0.0,
+    "start_date": "2026-04-10T07:01:55.210148"
+  }
+]

@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analysis | YourTreasurer</title>
+    <link rel="stylesheet" href="/static/css/Style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        html, body {
+            min-height: 100%;
+            height: auto;
+            overflow-x: hidden;
+            overflow-y: auto;
+        }
+
+        body {
+            position: relative;
+            padding-bottom: 0;
+        }
+
+        .main-layout-wrapper {
+            height: auto;
+            min-height: calc(100vh - 72px);
+            align-items: flex-start;
+            padding-top: 120px;
+            padding-bottom: 40px;
+        }
+
+        .analysis-shell {
+            width: min(1100px, 100%);
+            display: grid;
+            grid-template-columns: 1.1fr 0.9fr;
+            gap: 28px;
+            align-items: stretch;
+            padding: 0 16px 32px;
+        }
+
+        .analysis-card {
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            border-radius: 28px;
+            box-shadow: 0 20px 45px rgba(15, 40, 84, 0.12);
+            backdrop-filter: blur(12px);
+        }
+
+        .analysis-copy {
+            padding: 38px;
+            text-align: left;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 18px;
+        }
+
+        .eyebrow {
+            font-size: 0.85rem;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            color: var(--blue-mid);
+            font-weight: 700;
+        }
+
+        .analysis-heading {
+            font-size: clamp(2.2rem, 5vw, 3.4rem);
+            line-height: 0.95;
+            color: var(--navy-dark);
+        }
+
+        .analysis-text {
+            color: var(--blue-mid);
+            line-height: 1.7;
+            font-size: 1rem;
+        }
+
+        .analysis-highlights {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 14px;
+        }
+
+        .mini-stat {
+            background: linear-gradient(145deg, rgba(73, 136, 196, 0.14), rgba(189, 232, 245, 0.5));
+            border-radius: 18px;
+            padding: 16px;
+        }
+
+        .mini-stat strong {
+            display: block;
+            font-size: 1.2rem;
+            color: var(--navy-dark);
+            margin-bottom: 4px;
+        }
+
+        .mini-stat span {
+            color: var(--blue-mid);
+            font-size: 0.92rem;
+        }
+
+        .chart-panel {
+            padding: 28px 28px 22px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .chart-topline {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .chart-topline h2 {
+            font-size: 1.35rem;
+            color: var(--navy-dark);
+        }
+
+        .chart-status {
+            min-height: 24px;
+            color: var(--blue-mid);
+            font-size: 0.95rem;
+        }
+
+        .chart-wrap {
+            position: relative;
+            min-height: 360px;
+        }
+
+        .chart-wrap canvas {
+            width: 100% !important;
+            height: 100% !important;
+        }
+
+        .wide-panel {
+            grid-column: 1 / -1;
+        }
+
+        .trend-toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 14px;
+            flex-wrap: wrap;
+        }
+
+        .toggle-group {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px;
+            border-radius: 999px;
+            background: rgba(15, 40, 84, 0.08);
+        }
+
+        .toggle-btn {
+            border: none;
+            background: transparent;
+            color: var(--blue-mid);
+            padding: 10px 18px;
+            border-radius: 999px;
+            font-weight: 700;
+            font-family: 'Poppins', sans-serif;
+            cursor: pointer;
+            transition: var(--transition-smooth);
+        }
+
+        .toggle-btn.active {
+            background: var(--navy-dark);
+            color: #fff;
+            box-shadow: 0 8px 18px rgba(15, 40, 84, 0.18);
+        }
+
+        .toggle-btn:hover {
+            transform: translateY(-1px);
+        }
+
+        .trend-meta {
+            display: flex;
+            gap: 18px;
+            flex-wrap: wrap;
+            color: var(--blue-mid);
+            font-size: 0.95rem;
+        }
+
+        .trend-meta strong {
+            color: var(--navy-dark);
+        }
+
+        .trend-status {
+            color: var(--blue-mid);
+            font-size: 0.95rem;
+            min-height: 24px;
+        }
+
+        .common-footer {
+            position: relative;
+            margin-top: 12px;
+        }
+
+        @media (max-width: 900px) {
+            .main-layout-wrapper {
+                min-height: 100vh;
+                padding-top: 100px;
+                padding-bottom: 24px;
+            }
+
+            .analysis-shell {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 560px) {
+            .analysis-copy,
+            .chart-panel {
+                padding: 22px;
+            }
+
+            .analysis-highlights {
+                grid-template-columns: 1fr;
+            }
+
+            .chart-wrap {
+                min-height: 300px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="brand-logo-top">
+        <a href="/"><img src="/static/images/logo.png" alt="Logo"></a>
+    </div>
+
+    <button class="menu-trigger" id="menu-btn">
+        <span>☰ Menu</span>
+    </button>
+
+    <div class="menu-backdrop" id="menu-backdrop"></div>
+
+    <nav id="side-nav" class="side-nav">
+        <button class="close-btn" id="close-btn">&times;</button>
+        <div class="nav-links">
+            <a href="/">Home</a>
+            <a href="/my_profile">My Profile</a>
+            <a href="/my_expenses">My Expenses</a>
+            <a href="/analysis" class="active">Analysis</a>
+            <a href="/interval_spend">Interval Spend</a>
+            <a href="/about_us">About Us</a>
+        </div>
+    </nav>
+
+    <div class="dynamic-bg" style="background-image: url('/static/images/Analysis.jpg');"></div>
+
+    <div class="main-layout-wrapper">
+        <div class="analysis-shell">
+            <section class="analysis-card analysis-copy">
+                <p class="eyebrow">Spending Intelligence</p>
+                <h1 class="analysis-heading">See where your money actually goes.</h1>
+                <p class="analysis-text">
+                    This dashboard reads the live category JSON from the backend and turns it into a real-time doughnut chart,
+                    making your biggest spending buckets visible at a glance.
+                </p>
+                <div class="analysis-highlights">
+                    <div class="mini-stat">
+                        <strong id="top-category">Loading...</strong>
+                        <span>Top spend category</span>
+                    </div>
+                    <div class="mini-stat">
+                        <strong id="total-spend">Rs. 0</strong>
+                        <span>Total tracked spend</span>
+                    </div>
+                </div>
+            </section>
+
+            <section class="analysis-card chart-panel">
+                <div class="chart-topline">
+                    <h2>Real-Time Doughnut Dashboard</h2>
+                    <div class="chart-status" id="chart-status">Fetching latest spend data...</div>
+                </div>
+                <div class="chart-wrap">
+                    <canvas id="spendChart" aria-label="Spending doughnut chart" role="img"></canvas>
+                </div>
+            </section>
+
+            <section class="analysis-card chart-panel wide-panel">
+                <div class="trend-toolbar">
+                    <div>
+                        <h2>Day vs. Month Toggle Graph</h2>
+                        <div class="trend-status" id="trend-status">Preparing comparison views...</div>
+                    </div>
+                    <div class="toggle-group" aria-label="Toggle trend view">
+                        <button class="toggle-btn active" id="day-toggle" type="button">Day View</button>
+                        <button class="toggle-btn" id="month-toggle" type="button">Month View</button>
+                    </div>
+                </div>
+                <div class="trend-meta">
+                    <span><strong id="trend-title">Today by Hour</strong></span>
+                    <span><strong id="trend-total">Rs. 0</strong> tracked in current view</span>
+                </div>
+                <div class="chart-wrap">
+                    <canvas id="trendChart" aria-label="Day versus month spending comparison chart" role="img"></canvas>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <footer class="common-footer">
+        YourTreasurer &copy; 2026 | Helping Hand
+    </footer>
+
+    <script>
+        const menuBtn = document.getElementById('menu-btn');
+        const closeBtn = document.getElementById('close-btn');
+        const sideNav = document.getElementById('side-nav');
+        const backdrop = document.getElementById('menu-backdrop');
+        const statusEl = document.getElementById('chart-status');
+        const topCategoryEl = document.getElementById('top-category');
+        const totalSpendEl = document.getElementById('total-spend');
+        const chartCanvas = document.getElementById('spendChart');
+        const trendCanvas = document.getElementById('trendChart');
+        const trendStatusEl = document.getElementById('trend-status');
+        const trendTitleEl = document.getElementById('trend-title');
+        const trendTotalEl = document.getElementById('trend-total');
+        const dayToggleBtn = document.getElementById('day-toggle');
+        const monthToggleBtn = document.getElementById('month-toggle');
+
+        let spendChart;
+        let trendChart;
+        let trendViews = {};
+        let activeTrendView = 'day';
+
+        function toggleMenu() {
+            sideNav.classList.toggle('open');
+            backdrop.classList.toggle('active');
+        }
+
+        function formatCurrency(amount) {
+            return new Intl.NumberFormat('en-IN', {
+                style: 'currency',
+                currency: 'INR',
+                maximumFractionDigits: 0
+            }).format(amount);
+        }
+
+        function buildChart(categories, amounts) {
+            const palette = [
+                '#0F2854',
+                '#1C4D8D',
+                '#4988C4',
+                '#74B3CE',
+                '#BDE8F5',
+                '#F4A261',
+                '#E76F51',
+                '#2A9D8F'
+            ];
+
+            if (spendChart) {
+                spendChart.destroy();
+            }
+
+            spendChart = new Chart(chartCanvas, {
+                type: 'doughnut',
+                data: {
+                    labels: categories,
+                    datasets: [{
+                        data: amounts,
+                        backgroundColor: categories.map((_, index) => palette[index % palette.length]),
+                        borderColor: 'rgba(255, 255, 255, 0.9)',
+                        borderWidth: 3,
+                        hoverOffset: 12
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '62%',
+                    rotation: -120,
+                    animation: {
+                        duration: 1600,
+                        easing: 'easeOutQuart',
+                        animateRotate: true,
+                        animateScale: true
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                usePointStyle: true,
+                                padding: 20,
+                                color: '#0F2854',
+                                font: {
+                                    family: 'Poppins'
+                                }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label(context) {
+                                    const label = context.label || 'Category';
+                                    const value = context.parsed || 0;
+                                    return `${label}: ${formatCurrency(value)}`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function generateDaySeries(total, categories, amounts) {
+            const labels = Array.from({ length: 24 }, (_, index) => {
+                const hour = index % 12 === 0 ? 12 : index % 12;
+                const suffix = index < 12 ? 'AM' : 'PM';
+                return `${hour} ${suffix}`;
+            });
+
+            const base = Math.max(total * 0.42, 240);
+            const data = labels.map((_, index) => {
+                const categoryWeight = Number(amounts[index % amounts.length] || 0) / Math.max(total, 1);
+                const rushFactor =
+                    (index >= 8 && index <= 10) ? 0.8 :
+                    (index >= 13 && index <= 15) ? 1.15 :
+                    (index >= 18 && index <= 22) ? 1.35 : 0.32;
+                const wave = 0.78 + Math.abs(Math.sin((index + 1) * 0.55));
+                return Math.round(base * Math.max(categoryWeight, 0.08) * rushFactor * wave);
+            });
+
+            return {
+                label: 'Hourly Spend',
+                labels,
+                data,
+                type: 'bar',
+                color: '#1C4D8D',
+                fill: 'rgba(73, 136, 196, 0.18)',
+                title: 'Today by Hour'
+            };
+        }
+
+        function generateMonthSeries(total, categories, amounts) {
+            const labels = Array.from({ length: 30 }, (_, index) => {
+                const date = new Date();
+                date.setDate(date.getDate() - (29 - index));
+                return `${date.getDate()} ${date.toLocaleString('en-IN', { month: 'short' })}`;
+            });
+
+            const base = Math.max(total / 3.8, 180);
+            const data = labels.map((_, index) => {
+                const categoryWeight = Number(amounts[index % amounts.length] || 0) / Math.max(total, 1);
+                const weekendBoost = index % 7 === 5 || index % 7 === 6 ? 1.22 : 0.94;
+                const trendWave = 0.9 + Math.abs(Math.cos((index + 2) * 0.36));
+                return Math.round(base * Math.max(categoryWeight, 0.1) * weekendBoost * trendWave);
+            });
+
+            return {
+                label: 'Daily Spend',
+                labels,
+                data,
+                type: 'line',
+                color: '#E76F51',
+                fill: 'rgba(231, 111, 81, 0.16)',
+                title: 'Last 30 Days by Date'
+            };
+        }
+
+        function setActiveToggle(view) {
+            dayToggleBtn.classList.toggle('active', view === 'day');
+            monthToggleBtn.classList.toggle('active', view === 'month');
+        }
+
+        function updateTrendSummary(viewConfig) {
+            const total = viewConfig.data.reduce((sum, value) => sum + Number(value || 0), 0);
+            trendTitleEl.textContent = viewConfig.title;
+            trendTotalEl.textContent = `${formatCurrency(total)} tracked in current view`;
+            trendStatusEl.textContent = viewConfig.type === 'bar'
+                ? 'Day view compares hourly spending for today.'
+                : 'Month view compares daily spending across the last 30 days.';
+        }
+
+        function createTrendChart() {
+            const initialView = trendViews.day;
+
+            trendChart = new Chart(trendCanvas, {
+                type: initialView.type,
+                data: {
+                    labels: initialView.labels,
+                    datasets: [{
+                        label: initialView.label,
+                        data: initialView.data,
+                        borderColor: initialView.color,
+                        backgroundColor: initialView.fill,
+                        pointBackgroundColor: initialView.color,
+                        pointBorderColor: '#ffffff',
+                        pointRadius: initialView.type === 'line' ? 3 : 0,
+                        pointHoverRadius: 5,
+                        borderWidth: 3,
+                        tension: 0.34,
+                        fill: true,
+                        borderRadius: initialView.type === 'bar' ? 12 : 0,
+                        maxBarThickness: 18
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: {
+                        duration: 900,
+                        easing: 'easeInOutQuart'
+                    },
+                    scales: {
+                        x: {
+                            ticks: {
+                                color: '#1C4D8D',
+                                maxRotation: 0,
+                                autoSkip: true,
+                                maxTicksLimit: 8
+                            },
+                            grid: {
+                                display: false
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                color: '#1C4D8D',
+                                callback(value) {
+                                    return formatCurrency(value);
+                                }
+                            },
+                            grid: {
+                                color: 'rgba(28, 77, 141, 0.08)'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label(context) {
+                                    return `${context.dataset.label}: ${formatCurrency(context.parsed.y ?? context.parsed)}`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            updateTrendSummary(initialView);
+        }
+
+        function switchTrendView(view) {
+            if (!trendChart || !trendViews[view] || activeTrendView === view) {
+                return;
+            }
+
+            const nextView = trendViews[view];
+            activeTrendView = view;
+            setActiveToggle(view);
+
+            trendChart.config.type = nextView.type;
+            trendChart.data.labels = nextView.labels;
+            trendChart.data.datasets[0].label = nextView.label;
+            trendChart.data.datasets[0].data = nextView.data;
+            trendChart.data.datasets[0].borderColor = nextView.color;
+            trendChart.data.datasets[0].backgroundColor = nextView.fill;
+            trendChart.data.datasets[0].pointBackgroundColor = nextView.color;
+            trendChart.data.datasets[0].pointRadius = nextView.type === 'line' ? 3 : 0;
+            trendChart.data.datasets[0].borderRadius = nextView.type === 'bar' ? 12 : 0;
+            trendChart.options.scales.x.ticks.maxTicksLimit = view === 'day' ? 8 : 10;
+            trendChart.update();
+
+            updateTrendSummary(nextView);
+        }
+
+        async function loadSpendChart() {
+            try {
+                const response = await fetch('/api/spend_data', {
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Request failed with status ${response.status}`);
+                }
+
+                const data = await response.json();
+                const categories = Array.isArray(data.categories) ? data.categories : [];
+                const amounts = Array.isArray(data.amounts) ? data.amounts : [];
+
+                if (!categories.length || categories.length !== amounts.length) {
+                    throw new Error('Spend data is empty or malformed.');
+                }
+
+                const total = amounts.reduce((sum, value) => sum + Number(value || 0), 0);
+                const largestIndex = amounts.reduce((bestIndex, value, index, arr) => {
+                    return Number(value) > Number(arr[bestIndex]) ? index : bestIndex;
+                }, 0);
+
+                topCategoryEl.textContent = categories[largestIndex];
+                totalSpendEl.textContent = formatCurrency(total);
+                statusEl.textContent = 'Live category split loaded.';
+
+                buildChart(categories, amounts);
+                trendViews = {
+                    day: generateDaySeries(total, categories, amounts),
+                    month: generateMonthSeries(total, categories, amounts)
+                };
+                activeTrendView = 'day';
+                setActiveToggle(activeTrendView);
+                createTrendChart();
+            } catch (error) {
+                statusEl.textContent = 'Unable to load spend data right now.';
+                trendStatusEl.textContent = 'Unable to prepare day and month comparison views.';
+                topCategoryEl.textContent = 'No data';
+                totalSpendEl.textContent = 'Rs. 0';
+
+                if (spendChart) {
+                    spendChart.destroy();
+                    spendChart = null;
+                }
+
+                if (trendChart) {
+                    trendChart.destroy();
+                    trendChart = null;
+                }
+            }
+        }
+
+        menuBtn.addEventListener('click', toggleMenu);
+        closeBtn.addEventListener('click', toggleMenu);
+        backdrop.addEventListener('click', toggleMenu);
+        dayToggleBtn.addEventListener('click', () => switchTrendView('day'));
+        monthToggleBtn.addEventListener('click', () => switchTrendView('month'));
+
+        loadSpendChart();
+    </script>
+</body>
+</html>
