@@ -4,39 +4,359 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>YourTreasurer | Home</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="/static/css/Style.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        html, body {
+            min-height: 100%;
+            height: auto;
+            overflow-x: hidden;
+            overflow-y: auto;
+        }
+
+        .main-layout-wrapper {
+            height: auto;
+            min-height: calc(100vh - 72px);
+            align-items: flex-start;
+            padding: 110px 16px 36px;
+        }
+
+        .home-shell {
+            width: min(1120px, 100%);
+            display: grid;
+            gap: 24px;
+        }
+
+        .hero-panel,
+        .progress-panel,
+        .tip-panel {
+            background: rgba(255, 255, 255, 0.92);
+            border-radius: 30px;
+            box-shadow: 0 20px 45px rgba(15, 40, 84, 0.12);
+            backdrop-filter: blur(12px);
+        }
+
+        .hero-panel {
+            padding: 34px;
+            display: grid;
+            grid-template-columns: 1.15fr 0.85fr;
+            gap: 24px;
+            align-items: center;
+        }
+
+        .eyebrow {
+            font-size: 0.82rem;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            color: var(--blue-mid);
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+
+        .title {
+            font-size: clamp(2.8rem, 7vw, 5.4rem);
+            color: var(--navy-dark);
+            font-weight: 800;
+            line-height: 0.9;
+            letter-spacing: -2px;
+            margin-bottom: 12px;
+        }
+
+        .subtitle {
+            color: var(--blue-mid);
+            line-height: 1.7;
+            font-size: 1.04rem;
+            max-width: 560px;
+        }
+
+        .hero-metrics {
+            display: grid;
+            gap: 14px;
+        }
+
+        .metric-card {
+            background: linear-gradient(145deg, rgba(73, 136, 196, 0.14), rgba(189, 232, 245, 0.5));
+            border-radius: 22px;
+            padding: 20px;
+        }
+
+        .metric-card strong {
+            display: block;
+            font-size: 1.5rem;
+            color: var(--navy-dark);
+            margin-bottom: 6px;
+        }
+
+        .metric-card span {
+            color: var(--blue-mid);
+        }
+
+        .progress-panel {
+            padding: 30px;
+        }
+
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 18px;
+            flex-wrap: wrap;
+            margin-bottom: 18px;
+        }
+
+        .progress-header h2 {
+            color: var(--navy-dark);
+            font-size: 1.7rem;
+            margin-bottom: 6px;
+        }
+
+        .progress-status {
+            color: var(--blue-mid);
+            font-size: 0.96rem;
+            min-height: 24px;
+        }
+
+        .progress-value {
+            text-align: right;
+        }
+
+        .progress-value strong {
+            display: block;
+            font-size: 2rem;
+            color: var(--navy-dark);
+        }
+
+        .progress-value span {
+            color: var(--blue-mid);
+            font-size: 0.95rem;
+        }
+
+        .budget-track {
+            position: relative;
+            width: 100%;
+            height: 22px;
+            border-radius: 999px;
+            background: rgba(15, 40, 84, 0.08);
+            overflow: hidden;
+            margin: 18px 0 20px;
+        }
+
+        .budget-fill {
+            height: 100%;
+            width: 0%;
+            border-radius: inherit;
+            background: linear-gradient(90deg, #2A9D8F, #54C87D);
+            transition: width 0.9s ease, background 0.45s ease;
+            box-shadow: 0 10px 24px rgba(42, 157, 143, 0.22);
+        }
+
+        .budget-fill.yellow {
+            background: linear-gradient(90deg, #E9C46A, #F4A261);
+            box-shadow: 0 10px 24px rgba(233, 196, 106, 0.24);
+        }
+
+        .budget-fill.red {
+            background: linear-gradient(90deg, #E76F51, #C1121F);
+            box-shadow: 0 10px 24px rgba(231, 111, 81, 0.24);
+        }
+
+        .budget-fill.over {
+            animation: overPulse 1.3s ease-in-out infinite;
+        }
+
+        .budget-stats {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 16px;
+        }
+
+        .budget-stat {
+            background: rgba(189, 232, 245, 0.24);
+            border-radius: 20px;
+            padding: 18px;
+        }
+
+        .budget-stat strong {
+            display: block;
+            color: var(--navy-dark);
+            font-size: 1.35rem;
+            margin-bottom: 4px;
+        }
+
+        .budget-stat span {
+            color: var(--blue-mid);
+        }
+
+        .tip-panel {
+            padding: 24px 28px;
+            display: flex;
+            justify-content: space-between;
+            gap: 20px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .tip-panel p {
+            color: var(--blue-mid);
+            line-height: 1.7;
+            max-width: 720px;
+        }
+
+        .tip-actions {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .action-link {
+            border-radius: 999px;
+            padding: 12px 18px;
+            text-decoration: none;
+            font-weight: 700;
+            transition: var(--transition-smooth);
+        }
+
+        .action-link.primary {
+            background: var(--navy-dark);
+            color: #fff;
+        }
+
+        .action-link.secondary {
+            background: rgba(15, 40, 84, 0.08);
+            color: var(--navy-dark);
+        }
+
+        .action-link:hover {
+            transform: translateY(-2px);
+        }
+
+        .common-footer {
+            position: relative;
+            margin-top: 12px;
+        }
+
+        @keyframes overPulse {
+            0%, 100% {
+                filter: saturate(1);
+            }
+            50% {
+                filter: saturate(1.25) brightness(1.05);
+            }
+        }
+
+        @media (max-width: 900px) {
+            .hero-panel,
+            .budget-stats {
+                grid-template-columns: 1fr;
+            }
+
+            .progress-value {
+                text-align: left;
+            }
+        }
+
+        @media (max-width: 560px) {
+            .hero-panel,
+            .progress-panel,
+            .tip-panel {
+                padding: 22px;
+            }
+        }
+    </style>
 </head>
 <body>
     <div class="brand-logo-top">
-        <img src="{{ url_for('static', filename='images/logo.png') }}" alt="YourTreasurer Logo">
+        <img src="/static/images/logo.png" alt="YourTreasurer Logo">
     </div>
 
     <button class="menu-trigger" id="menu-btn">
-        <span>☰ Menu</span>
+        <span>Menu</span>
     </button>
 
     <div class="menu-backdrop" id="menu-backdrop"></div>
 
-     <nav id="side-nav" class="side-nav">
+    <nav id="side-nav" class="side-nav">
         <button class="close-btn" id="close-btn">&times;</button>
         <div class="nav-links">
-            <a href="/" data-bg="{{ url_for('static', filename='images/bg.svg') }}">Home</a>
-            <a href="/my_profile" data-bg="{{ url_for('static', filename='images/profile.jpg') }}">My Profile</a>
-            <a href="/my_expenses" data-bg="{{ url_for('static', filename='images/expenses.avif') }}">My Expenses</a>
-            <a href="/analysis" data-bg="{{ url_for('static', filename='images/Analysis.jpg') }}">Analysis</a>
-            <a href="/interval_spend" data-bg="{{ url_for('static', filename='images/interval.jpg') }}">Interval Spend</a>
-            <a href="/about_us" data-bg="{{ url_for('static', filename='images/aboutus.png') }}">About Us</a>
+            <a href="/" data-bg="/static/images/bg.svg">Home</a>
+            <a href="/my_profile" data-bg="/static/images/profile.jpg">My Profile</a>
+            <a href="/my_expenses" data-bg="/static/images/expenses.avif">My Expenses</a>
+            <a href="/analysis" data-bg="/static/images/Analysis.jpg">Analysis</a>
+            <a href="/interval_spend" data-bg="/static/images/interval.jpg">Interval Spend</a>
+            <a href="/about_us" data-bg="/static/images/aboutus.png">About Us</a>
         </div>
     </nav>
 
-    <div id="dynamic-bg" class="dynamic-bg" style="background-image: url('{{ url_for('static', filename='images/bg.svg') }}');"></div>
+    <div id="dynamic-bg" class="dynamic-bg" style="background-image: url('/static/images/bg.svg');"></div>
     <div id="hover-bg" class="dynamic-bg hover-layer"></div>
 
     <div class="main-layout-wrapper">
-        <div class="content-container">
-            <h1 class="title">YourTreasurer</h1>
-            <p class="subtitle">Smart Spending for Smart Ones</p>
+        <div class="home-shell">
+            <section class="hero-panel">
+                <div>
+                    <p class="eyebrow">Real-Time Financial Guard</p>
+                    <h1 class="title" id="home-title">YourTreasurer</h1>
+                    <p class="subtitle">
+                        Track how much of your monthly budget is already used, how much remains, and when your spending is moving into the danger zone.
+                    </p>
+                </div>
+                <div class="hero-metrics">
+                    <div class="metric-card">
+                        <strong id="hero-budget">Rs. {{ '%.0f'|format(budget_snapshot.budget or 0) }}</strong>
+                        <span>Current monthly budget</span>
+                    </div>
+                    <div class="metric-card">
+                        <strong id="hero-spent">Rs. {{ '%.0f'|format(budget_snapshot.spent or 0) }}</strong>
+                        <span>Total spent this month</span>
+                    </div>
+                </div>
+            </section>
+
+            <section class="progress-panel">
+                <div class="progress-header">
+                    <div>
+                        <h2>Real-Time Progress Bar</h2>
+                        <div class="progress-status" id="progress-status">{{ budget_snapshot.status }}</div>
+                    </div>
+                    <div class="progress-value">
+                        <strong id="usage-percent">{{ '%.0f'|format(budget_snapshot.usage_percent or 0) }}%</strong>
+                        <span>of monthly budget used</span>
+                    </div>
+                </div>
+
+                <div class="budget-track" aria-label="Budget usage progress bar">
+                    <div
+                        class="budget-fill"
+                        id="budget-fill"
+                        style="width: {{ budget_snapshot.capped_percent or 0 }}%;"
+                    ></div>
+                </div>
+
+                <div class="budget-stats">
+                    <div class="budget-stat">
+                        <strong id="budget-limit">Rs. {{ '%.0f'|format(budget_snapshot.budget or 0) }}</strong>
+                        <span>Budget limit</span>
+                    </div>
+                    <div class="budget-stat">
+                        <strong id="budget-used">Rs. {{ '%.0f'|format(budget_snapshot.spent or 0) }}</strong>
+                        <span>Used so far</span>
+                    </div>
+                    <div class="budget-stat">
+                        <strong id="budget-left">Rs. {{ '%.0f'|format(budget_snapshot.remaining or 0) }}</strong>
+                        <span>Remaining balance</span>
+                    </div>
+                </div>
+            </section>
+
+            <section class="tip-panel">
+                <p>
+                    The bar updates from database-backed budget data on page load and auto-refreshes while this page is open. Green means healthy, yellow means caution, and red means you are near or beyond your limit.
+                </p>
+                <div class="tip-actions">
+                    <a class="action-link primary" href="/my_expenses">Add Expense</a>
+                    <a class="action-link secondary" href="/my_profile">Update Budget</a>
+                </div>
+            </section>
         </div>
     </div>
     
@@ -44,35 +364,103 @@
         YourTreasurer &copy; 2026 | Helping Hand
     </footer>
 
-   
-<script>
+    <script>
         const menuBtn = document.getElementById('menu-btn');
         const closeBtn = document.getElementById('close-btn');
         const sideNav = document.getElementById('side-nav');
         const backdrop = document.getElementById('menu-backdrop');
-        
         const mainBg = document.getElementById('dynamic-bg');
         const hoverBg = document.getElementById('hover-bg');
         const navLinks = document.querySelectorAll('.nav-links a');
-        
-        // Set default background
-        const defaultBg = "{{ url_for('static', filename='images/bg.svg') }}";
-        mainBg.style.backgroundImage = `url(${defaultBg})`;
+        const fillEl = document.getElementById('budget-fill');
+        const statusEl = document.getElementById('progress-status');
+        const usageEl = document.getElementById('usage-percent');
+        const budgetLimitEl = document.getElementById('budget-limit');
+        const budgetUsedEl = document.getElementById('budget-used');
+        const budgetLeftEl = document.getElementById('budget-left');
+        const heroBudgetEl = document.getElementById('hero-budget');
+        const heroSpentEl = document.getElementById('hero-spent');
+        const homeTitleEl = document.getElementById('home-title');
+
+        function formatCurrency(amount) {
+            return new Intl.NumberFormat('en-IN', {
+                style: 'currency',
+                currency: 'INR',
+                maximumFractionDigits: 0
+            }).format(amount || 0);
+        }
 
         function toggleMenu() {
             sideNav.classList.toggle('open');
             backdrop.classList.toggle('active');
             if (sideNav.classList.contains('open')) {
-                document.body.style.position = 'fixed';
                 document.body.style.width = '100%';
             } else {
-                document.body.style.position = '';
-                // Reset bg when menu closes
                 hoverBg.style.opacity = '0';
             }
         }
 
-        // --- Hover Animation Logic ---
+        function applyProgressColor(percent) {
+            fillEl.classList.remove('yellow', 'red', 'over');
+            homeTitleEl.style.color = 'var(--navy-dark)';
+
+            if (percent >= 80) {
+                fillEl.classList.add('red');
+            } else if (percent >= 50) {
+                fillEl.classList.add('yellow');
+            }
+
+            if (percent >= 100) {
+                fillEl.classList.add('red', 'over');
+                homeTitleEl.style.color = '#C1121F';
+            }
+        }
+
+        function renderBudget(snapshot) {
+            const usagePercent = Number(snapshot.usage_percent || 0);
+            const cappedPercent = Number(snapshot.capped_percent || 0);
+            const remaining = Number(snapshot.remaining || 0);
+
+            fillEl.style.width = `${Math.max(0, Math.min(cappedPercent, 100))}%`;
+            applyProgressColor(usagePercent);
+
+            usageEl.textContent = `${Math.round(usagePercent)}%`;
+            budgetLimitEl.textContent = formatCurrency(snapshot.budget);
+            budgetUsedEl.textContent = formatCurrency(snapshot.spent);
+            budgetLeftEl.textContent = formatCurrency(remaining);
+            heroBudgetEl.textContent = formatCurrency(snapshot.budget);
+            heroSpentEl.textContent = formatCurrency(snapshot.spent);
+
+            if (snapshot.offline_mode) {
+                statusEl.textContent = 'Offline demo mode. MongoDB is unreachable, so values are fallback data.';
+            } else if (usagePercent >= 100) {
+                statusEl.textContent = 'Over budget. Every new expense now pushes the bar deeper into the red zone.';
+            } else if (usagePercent >= 80) {
+                statusEl.textContent = 'Critical zone. Your spending is close to the budget ceiling.';
+            } else if (usagePercent >= 50) {
+                statusEl.textContent = 'Caution zone. Budget usage is starting to climb quickly.';
+            } else {
+                statusEl.textContent = 'Healthy zone. Spending is comfortably within your current budget.';
+            }
+        }
+
+        async function refreshBudgetStatus() {
+            try {
+                const response = await fetch('/api/budget_status', {
+                    headers: { 'Accept': 'application/json' }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Request failed with status ${response.status}`);
+                }
+
+                const snapshot = await response.json();
+                renderBudget(snapshot);
+            } catch (error) {
+                statusEl.textContent = 'Could not refresh live budget data right now.';
+            }
+        }
+
         navLinks.forEach(link => {
             link.addEventListener('mouseenter', () => {
                 const newImg = link.getAttribute('data-bg');
@@ -88,6 +476,18 @@
         menuBtn.addEventListener('click', toggleMenu);
         closeBtn.addEventListener('click', toggleMenu);
         backdrop.addEventListener('click', toggleMenu);
+
+        renderBudget({
+            budget: {{ budget_snapshot.budget or 0 }},
+            spent: {{ budget_snapshot.spent or 0 }},
+            remaining: {{ budget_snapshot.remaining or 0 }},
+            usage_percent: {{ budget_snapshot.usage_percent or 0 }},
+            capped_percent: {{ budget_snapshot.capped_percent or 0 }},
+            offline_mode: {{ 'true' if budget_snapshot.offline_mode else 'false' }}
+        });
+
+        refreshBudgetStatus();
+        setInterval(refreshBudgetStatus, 10000);
     </script>
 </body>
 </html>

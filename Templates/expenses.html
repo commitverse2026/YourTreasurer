@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Expenses | YourTreasurer</title>
+    <link rel="stylesheet" href="/static/css/Style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        html, body {
+            min-height: 100%;
+            height: auto;
+            overflow-x: hidden;
+            overflow-y: auto;
+        }
+
+        .main-layout-wrapper {
+            height: auto;
+            min-height: calc(100vh - 72px);
+            align-items: flex-start;
+            padding: 110px 16px 36px;
+        }
+
+        .expenses-shell {
+            width: min(1120px, 100%);
+            display: grid;
+            gap: 24px;
+        }
+
+        .panel {
+            background: rgba(255, 255, 255, 0.93);
+            border-radius: 28px;
+            padding: 28px;
+            box-shadow: 0 20px 42px rgba(15, 40, 84, 0.12);
+            backdrop-filter: blur(12px);
+        }
+
+        .intro-grid,
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 16px;
+        }
+
+        .panel h1,
+        .panel h2,
+        .panel h3 {
+            color: var(--navy-dark);
+        }
+
+        .panel p,
+        .muted {
+            color: var(--blue-mid);
+            line-height: 1.7;
+        }
+
+        .summary-card {
+            background: linear-gradient(145deg, rgba(73, 136, 196, 0.12), rgba(189, 232, 245, 0.52));
+            border-radius: 22px;
+            padding: 20px;
+        }
+
+        .summary-card strong {
+            display: block;
+            color: var(--navy-dark);
+            font-size: 1.4rem;
+            margin-bottom: 6px;
+        }
+
+        .flash-stack {
+            display: grid;
+            gap: 12px;
+        }
+
+        .flash {
+            padding: 14px 16px;
+            border-radius: 16px;
+            font-weight: 600;
+        }
+
+        .flash.success {
+            background: rgba(42, 157, 143, 0.14);
+            color: #1d6b62;
+        }
+
+        .flash.warning {
+            background: rgba(244, 162, 97, 0.18);
+            color: #a45116;
+        }
+
+        .flash.error {
+            background: rgba(231, 111, 81, 0.16);
+            color: #992f18;
+        }
+
+        .content-grid {
+            display: grid;
+            grid-template-columns: 0.95fr 1.05fr;
+            gap: 24px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 16px;
+            margin-top: 18px;
+        }
+
+        .field {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .field label {
+            font-weight: 700;
+            color: var(--navy-dark);
+        }
+
+        .field input,
+        .field textarea,
+        .field select {
+            border: 1px solid rgba(28, 77, 141, 0.16);
+            border-radius: 14px;
+            padding: 14px 16px;
+            font: inherit;
+            color: var(--navy-dark);
+            background: #fff;
+        }
+
+        .field textarea {
+            resize: vertical;
+            min-height: 120px;
+        }
+
+        .field.full {
+            grid-column: 1 / -1;
+        }
+
+        .submit-btn,
+        .link-btn {
+            border: none;
+            border-radius: 999px;
+            padding: 14px 20px;
+            font: inherit;
+            font-weight: 700;
+            color: #fff;
+            background: var(--navy-dark);
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .expense-list {
+            display: grid;
+            gap: 14px;
+            margin-top: 18px;
+        }
+
+        .expense-card {
+            background: rgba(189, 232, 245, 0.24);
+            border-radius: 20px;
+            padding: 18px;
+            border: 1px solid rgba(73, 136, 196, 0.12);
+            animation: slideUp 0.45s ease both;
+        }
+
+        .expense-head {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            align-items: baseline;
+            margin-bottom: 8px;
+        }
+
+        .expense-head strong {
+            color: var(--navy-dark);
+            font-size: 1.05rem;
+        }
+
+        .expense-meta {
+            color: var(--blue-mid);
+            font-size: 0.94rem;
+        }
+
+        .empty-state {
+            margin-top: 18px;
+            padding: 20px;
+            border-radius: 18px;
+            background: rgba(189, 232, 245, 0.24);
+            color: var(--blue-mid);
+        }
+
+        .common-footer {
+            position: relative;
+            margin-top: 12px;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(18px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @media (max-width: 900px) {
+            .content-grid,
+            .intro-grid,
+            .summary-grid,
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="brand-logo-top">
+        <a href="/"><img src="/static/images/logo.png" alt="Logo"></a>
+    </div>
+
+    <button class="menu-trigger" id="menu-btn"><span>Menu</span></button>
+    <div class="menu-backdrop" id="menu-backdrop"></div>
+
+    <nav id="side-nav" class="side-nav">
+        <button class="close-btn" id="close-btn">&times;</button>
+        <div class="nav-links">
+            <a href="/">Home</a>
+            <a href="/my_profile">My Profile</a>
+            <a href="/my_expenses" class="active">My Expenses</a>
+            <a href="/analysis">Analysis</a>
+            <a href="/interval_spend">Interval Spend</a>
+            <a href="/about_us">About Us</a>
+        </div>
+    </nav>
+
+    <div class="dynamic-bg" style="background-image: url('/static/images/expenses.avif');"></div>
+
+    <div class="main-layout-wrapper">
+        <div class="expenses-shell">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    <div class="flash-stack">
+                        {% for category, message in messages %}
+                            <div class="flash {{ category }}">{{ message }}</div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+
+            <section class="panel">
+                <div class="intro-grid">
+                    <div>
+                        <h1>Expense Command Center</h1>
+                        <p>Add an expense here to test the Guardian mail workflow directly from the site. The alert banners on this page tell you when a 10%, 5%, or over-budget email was triggered.</p>
+                    </div>
+                    <div class="summary-card">
+                        <strong>Rs. {{ '%.0f'|format(budget_amount or 0) }}</strong>
+                        <span>Monthly budget</span>
+                    </div>
+                    <div class="summary-card">
+                        <strong>{{ budget_doc.email or 'Not set' }}</strong>
+                        <span>Guardian recipient</span>
+                    </div>
+                </div>
+            </section>
+
+            <section class="summary-grid">
+                <div class="panel summary-card">
+                    <strong>Rs. {{ '%.0f'|format(total_spent or 0) }}</strong>
+                    <span>Spent this month</span>
+                </div>
+                <div class="panel summary-card">
+                    <strong>Rs. {{ '%.0f'|format(remaining_amount or 0) }}</strong>
+                    <span>Remaining budget</span>
+                </div>
+                <div class="panel summary-card">
+                    <strong>{{ expenses|length }}</strong>
+                    <span>Recent entries shown</span>
+                </div>
+            </section>
+
+            <section class="content-grid">
+                <div class="panel">
+                    <h2>Add Expense</h2>
+                    <p class="muted">Use this form to create an expense and immediately test the guardian thresholds.</p>
+                    <form action="/add_expense" method="post" class="form-grid">
+                        <div class="field">
+                            <label for="title">Title</label>
+                            <input id="title" name="title" type="text" placeholder="Mess bill, Snacks, Cab ride" required>
+                        </div>
+                        <div class="field">
+                            <label for="category">Category</label>
+                            <select id="category" name="category" required>
+                                <option value="Educational">Educational</option>
+                                <option value="Lifestyle">Lifestyle</option>
+                                <option value="Healthy Food">Healthy Food</option>
+                                <option value="Junk Food">Junk Food</option>
+                                <option value="Hostel Rent">Hostel Rent</option>
+                                <option value="Travelling">Travelling</option>
+                                <option value="General">General</option>
+                            </select>
+                        </div>
+                        <div class="field">
+                            <label for="amount">Amount</label>
+                            <input id="amount" name="amount" type="number" min="1" step="0.01" placeholder="250" required>
+                        </div>
+                        <div class="field full">
+                            <label for="notes">Notes</label>
+                            <textarea id="notes" name="notes" placeholder="Optional details for this expense"></textarea>
+                        </div>
+                        <div class="field full">
+                            <button class="submit-btn" type="submit">Add Expense</button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="panel">
+                    <h2>Recent Expenses</h2>
+                    <p class="muted">These entries are read from MongoDB and refresh each time you add a new one.</p>
+                    {% if expenses %}
+                        <div class="expense-list">
+                            {% for expense in expenses %}
+                                <article class="expense-card">
+                                    <div class="expense-head">
+                                        <strong>{{ expense.title }}</strong>
+                                        <strong>Rs. {{ '%.0f'|format(expense.amount or 0) }}</strong>
+                                    </div>
+                                    <div class="expense-meta">{{ expense.category }} | {{ expense.created_at.strftime('%d %b %Y, %I:%M %p') if expense.created_at else 'Just now' }}</div>
+                                    {% if expense.notes %}
+                                        <p class="muted">{{ expense.notes }}</p>
+                                    {% endif %}
+                                </article>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="empty-state">
+                            No expenses yet. Add your first one here and the page will show whether a guardian alert was triggered.
+                        </div>
+                    {% endif %}
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <footer class="common-footer">YourTreasurer &copy; 2026 | Helping Hand</footer>
+
+    <script>
+        const menuBtn = document.getElementById('menu-btn');
+        const closeBtn = document.getElementById('close-btn');
+        const sideNav = document.getElementById('side-nav');
+        const backdrop = document.getElementById('menu-backdrop');
+
+        function toggleMenu() {
+            sideNav.classList.toggle('open');
+            backdrop.classList.toggle('active');
+        }
+
+        menuBtn.addEventListener('click', toggleMenu);
+        closeBtn.addEventListener('click', toggleMenu);
+        backdrop.addEventListener('click', toggleMenu);
+    </script>
+</body>
+</html>
