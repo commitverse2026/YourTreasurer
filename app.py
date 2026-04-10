@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, flash, redirect, url_for, jsonify
+from flask import Flask, render_template, request, flash, redirect, url_for, jsonify, session
 from flask_pymongo import PyMongo
 from flask_mail import Mail, Message
 from werkzeug.utils import secure_filename
@@ -8,7 +8,11 @@ import threading
 import time
 import cloudinary
 import cloudinary.uploader
-from datetime import datetime
+from datetime import datetime, timedelta
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv(override=True)
 
 app = Flask(__name__)
 app.secret_key = "campuscoin_tracker_2026"
@@ -23,8 +27,7 @@ cloudinary.config(
 )
 
 # 2. MongoDB & Mail Setup
-# TODO for Participants: Insert your free MongoDB Atlas URI here
-app.config["MONGO_URI"] = "mongodb+srv://priteepardeshi3011_db_user:o1UpyYozHv4zvlTn@cluster0.a5drjzn.mongodb.net/"
+app.config["MONGO_URI"] = os.environ.get("MONGO_URI", "mongodb+srv://priteepardeshi3011_db_user:o1UpyYozHv4zvlTn@cluster0.a5drjzn.mongodb.net/yourtreasurer")
 mongo = PyMongo(app)
 
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
@@ -52,10 +55,11 @@ def send_async_email(app, msg):
 @app.before_request
 def check_budget_setup():
     """
-    TODO Task 1: Check if the user has set up their initial monthly budget.
-    If they haven't (and they aren't on static/profile pages), redirect them to MyProfile.
+    Check if the user has logged in.
+    If not logged in (and they aren't on profile page), redirect them to MyProfile.
     """
-    pass 
+    if 'user' not in session and request.endpoint not in ['my_profile', 'static']:
+        return redirect(url_for('my_profile')) 
 
 # --- CORE NAVIGATION ROUTES ---
 
@@ -64,10 +68,72 @@ def home():
     # TODO: Fetch today's expenses to show a quick summary on the home dashboard
     return render_template('index.html')
 
-@app.route('/my_profile')
+@app.route('/my_profile', methods=['GET', 'POST'])
 def my_profile():
-    # TODO: Fetch user's current budget threshold from MongoDB
-    return render_template('profile.html')
+    if request.method == 'POST':
+        name = request.form.get('name')
+        password = request.form.get('password')
+        monthly_limit = request.form.get('monthly_limit')
+
+        try:
+            users_collection = mongo.db.users
+            if users_collection is None:
+                flash('Database connection failed. Please check your MongoDB configuration.', 'error')
+                return render_template('profile.html')
+            
+            user = users_collection.find_one({'name': name})
+
+            if user:
+                # Existing user: verify password
+                if user['password'] == password:
+                    # 30-day logic
+                    start_date = user.get('start_date')
+                    if start_date:
+                        start_date = datetime.fromisoformat(start_date)
+                        if datetime.now() > start_date + timedelta(days=30):
+                            # Reset budget
+                            users_collection.update_one(
+                                {'name': name},
+                                {'$set': {'current_spend': 0, 'start_date': datetime.now().isoformat()}}
+                            )
+                    # Set session
+                    session['user'] = name
+                    flash('Login successful! Digital Unlock chime plays.', 'success')
+                    return redirect(url_for('home'))
+                else:
+                    flash('Invalid password.', 'error')
+            else:
+                # New user: require monthly_limit
+                if monthly_limit:
+                    try:
+                        monthly_limit = float(monthly_limit)
+                        new_user = {
+                            'name': name,
+                            'password': password,
+                            'monthly_limit': monthly_limit,
+                            'current_spend': 0,
+                            'start_date': datetime.now().isoformat()
+                        }
+                        users_collection.insert_one(new_user)
+                        session['user'] = name
+                        flash('Account created and logged in! Digital Unlock chime plays.', 'success')
+                        return redirect(url_for('home'))
+                    except ValueError:
+                        flash('Invalid monthly limit.', 'error')
+                else:
+                    flash('New user must provide monthly budget limit.', 'error')
+        except Exception as e:
+            flash(f'Database error: {str(e)}', 'error')
+
+    user_data = None
+    if 'user' in session:
+        try:
+            users_collection = mongo.db.users
+            user_data = users_collection.find_one({'name': session['user']})
+        except Exception:
+            pass
+            
+    return render_template('profile.html', user_data=user_data)
 
 @app.route('/my_expenses')
 def my_expenses():
@@ -83,9 +149,10 @@ def interval_spend():
     # TODO: Fetch EMI and Subscription data to display upcoming dues
     return render_template('interval_spend.html')
 
-@app.route('/about_us')
-def about_us():
-    return render_template('about_us.html')
+@app.route('/logout')
+def logout():
+    session.pop('user', None)
+    return redirect(url_for('my_profile'))
 
 # --- DATA SUBMISSION ROUTES (THE LOGIC) ---
 

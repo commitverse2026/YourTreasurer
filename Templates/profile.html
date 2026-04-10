@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Profile - YourTreasurer</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/Style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div id="dynamic-bg" class="dynamic-bg" style="background-image: url('{{ url_for('static', filename='images/bg.svg') }}');"></div>
+    <div id="hover-bg" class="dynamic-bg hover-layer"></div>
+
+    <div class="container">
+        <div class="glass-card">
+            <h1>My Profile</h1>
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ 'success' if category == 'success' else 'error' }}">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            {% if user_data %}
+            <div class="profile-info" style="text-align: center; margin-top: 20px; color: white;">
+                <h2>Welcome, {{ user_data.name }}!</h2>
+                <p style="margin: 15px 0; font-size: 1.1em;"><strong>Monthly Budget:</strong> ${{ "%.2f"|format(user_data.monthly_limit) }}</p>
+                <p style="margin: 15px 0; font-size: 1.1em;"><strong>Current Spend:</strong> ${{ "%.2f"|format(user_data.current_spend) }}</p>
+                
+                <div style="margin-top: 30px;">
+                    <a href="{{ url_for('home') }}" style="display: inline-block; padding: 10px 20px; background-color: rgba(255, 255, 255, 0.2); color: white; text-decoration: none; border-radius: 8px; margin-right: 15px; border: 1px solid rgba(255, 255, 255, 0.3);">Go Home</a>
+                    <a href="{{ url_for('logout') }}" style="display: inline-block; padding: 10px 20px; background-color: #ff4757; color: white; text-decoration: none; border-radius: 8px; font-weight: bold;">Logout</a>
+                </div>
+            </div>
+            {% else %}
+            <div class="profile-form">
+                <form method="POST" action="/my_profile">
+                    <div class="form-group">
+                        <label for="name">Name:</label>
+                        <input type="text" id="name" name="name" required placeholder="Enter your name">
+                    </div>
+                    <div class="form-group">
+                        <label for="password">Password:</label>
+                        <input type="password" id="password" name="password" required placeholder="Enter your password">
+                    </div>
+                    <div class="form-group" id="monthly-limit-group" style="display: none;">
+                        <label for="monthly_limit">Monthly Budget Limit:</label>
+                        <input type="number" id="monthly_limit" name="monthly_limit" step="0.01" placeholder="e.g., 5000.00">
+                    </div>
+                    <button type="submit" id="login-btn">Login</button>
+                    <button type="button" id="signup-btn">New User? Sign Up</button>
+                </form>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('signup-btn').addEventListener('click', function() {
+            document.getElementById('monthly-limit-group').style.display = 'block';
+            document.getElementById('login-btn').textContent = 'Sign Up';
+            this.style.display = 'none';
+        });
+    </script>
+</body>
+</html></content>
+<parameter name="filePath">c:\Users\VICTUS\OneDrive\Desktop\YourTreasurer\Templates\profile.html
