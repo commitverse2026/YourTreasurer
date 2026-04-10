@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YourTreasurer | Budget Gateway</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        body.gateway-page {
+            overflow-y: auto;
+            height: auto;
+            min-height: 100%;
+        }
+        .gateway-wrap {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 100px 20px 120px;
+            position: relative;
+            z-index: 5;
+        }
+        .gateway-card {
+            width: min(420px, 100%);
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            border-radius: 20px;
+            padding: 2rem 1.75rem;
+            box-shadow: 0 12px 40px rgba(15, 40, 84, 0.15);
+        }
+        .gateway-card h1 {
+            font-size: 1.65rem;
+            font-weight: 800;
+            color: var(--navy-dark);
+            text-align: center;
+            margin-bottom: 0.35rem;
+        }
+        .gateway-card .sub {
+            text-align: center;
+            color: var(--blue-mid);
+            font-size: 0.9rem;
+            margin-bottom: 1.5rem;
+        }
+        .gateway-form label {
+            display: block;
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: var(--navy-dark);
+            margin-bottom: 0.35rem;
+        }
+        .gateway-form input {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid rgba(28, 77, 141, 0.25);
+            border-radius: 10px;
+            font-family: 'Poppins', sans-serif;
+            margin-bottom: 1rem;
+            box-sizing: border-box;
+        }
+        .gateway-form button[type="submit"] {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 50px;
+            background: var(--navy-dark);
+            color: #fff;
+            font-family: 'Poppins', sans-serif;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 0.5rem;
+            transition: transform 0.2s ease;
+        }
+        .gateway-form button[type="submit"]:hover {
+            transform: scale(1.02);
+        }
+        .flash-error {
+            background: rgba(180, 40, 40, 0.12);
+            color: #7a1515;
+            padding: 10px 14px;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            margin-bottom: 1rem;
+        }
+        .hint {
+            font-size: 0.8rem;
+            color: var(--blue-mid);
+            margin-top: 1rem;
+            text-align: center;
+        }
+        #dynamic-bg.gateway-bg {
+            background-image: url('{{ url_for("static", filename="images/profile.jpg") }}');
+        }
+    </style>
+</head>
+<body class="gateway-page">
+    <div class="brand-logo-top">
+        <img src="{{ url_for('static', filename='images/logo.png') }}" alt="YourTreasurer Logo">
+    </div>
+
+    <div id="dynamic-bg" class="dynamic-bg gateway-bg"></div>
+
+    <main class="gateway-wrap">
+        <div class="gateway-card">
+            <h1>Budget Gateway</h1>
+            <p class="sub">Sign in with MongoDB-verified credentials</p>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% for category, message in messages %}
+            {% if category == 'error' %}
+            <div class="flash-error">{{ message }}</div>
+            {% endif %}
+            {% endfor %}
+            {% endwith %}
+
+            <form class="gateway-form" method="post" action="{{ url_for('budget_gateway') }}">
+                <input type="hidden" name="next" value="{{ request.args.get('next', '') }}">
+                <label for="name">Name</label>
+                <input id="name" name="name" type="text" autocomplete="username" required maxlength="120" value="{{ name or '' }}">
+
+                <label for="password">Password</label>
+                <input id="password" name="password" type="password" autocomplete="current-password" required maxlength="200">
+
+                <label for="monthly_limit">Monthly limit <span style="font-weight:400">(new users only)</span></label>
+                <input id="monthly_limit" name="monthly_limit" type="number" step="0.01" min="0" placeholder="e.g. 5000">
+
+                <button type="submit" id="unlock-btn">Unlock</button>
+            </form>
+            <p class="hint">Returning users: leave monthly limit blank. New users: set a monthly limit to create your account.</p>
+        </div>
+    </main>
+
+    <footer class="common-footer">
+        YourTreasurer &copy; 2026 | Helping Hand
+    </footer>
+
+</body>
+</html>

@@ -3,22 +3,48 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>YourTreasurer | Home</title>
+    <title>YourTreasurer | My Profile</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        body.profile-page { overflow-y: auto; height: auto; min-height: 100%; }
+        .profile-main {
+            max-width: 560px;
+            margin: 0 auto;
+            padding: 100px 20px 120px;
+            position: relative;
+            z-index: 5;
+        }
+        .profile-card {
+            background: rgba(255,255,255,0.85);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 1.75rem;
+            box-shadow: 0 8px 32px rgba(15,40,84,0.1);
+        }
+        .profile-card h1 { font-size: 1.5rem; color: var(--navy-dark); margin-bottom: 1rem; }
+        .profile-row { margin-bottom: 0.75rem; color: var(--blue-mid); }
+        .profile-row strong { color: var(--navy-dark); }
+        .logout-link {
+            display: inline-block;
+            margin-top: 1.25rem;
+            color: var(--navy-dark);
+            font-weight: 600;
+        }
+        #dynamic-bg.profile-bg {
+            background-image: url('{{ url_for("static", filename="images/profile.jpg") }}');
+        }
+    </style>
 </head>
-<body>
+<body class="profile-page">
     <div class="brand-logo-top">
         <img src="{{ url_for('static', filename='images/logo.png') }}" alt="YourTreasurer Logo">
     </div>
-
-    <button class="menu-trigger" id="menu-btn">
-        <span>☰ Menu</span>
-    </button>
+    <button class="menu-trigger" id="menu-btn"><span>☰ Menu</span></button>
 
     <div class="menu-backdrop" id="menu-backdrop"></div>
 
-     <nav id="side-nav" class="side-nav">
+    <nav id="side-nav" class="side-nav">
         <button class="close-btn" id="close-btn">&times;</button>
         <div class="nav-links">
             <a href="/" data-bg="{{ url_for('static', filename='images/bg.svg') }}">Home</a>
@@ -31,34 +57,35 @@
         </div>
     </nav>
 
-    <div id="dynamic-bg" class="dynamic-bg" style="background-image: url('{{ url_for('static', filename='images/bg.svg') }}');"></div>
+    <div id="dynamic-bg" class="dynamic-bg profile-bg"></div>
     <div id="hover-bg" class="dynamic-bg hover-layer"></div>
 
-    <div class="main-layout-wrapper">
-        <div class="content-container">
-            <h1 class="title">YourTreasurer</h1>
-            <p class="subtitle">Smart Spending for Smart Ones</p>
+    <main class="profile-main">
+        <div class="profile-card">
+            <h1>My profile</h1>
+            {% if user %}
+            <p class="profile-row"><strong>Name</strong> — {{ user.name }}</p>
+            <p class="profile-row"><strong>Monthly limit</strong> — {{ user.monthly_limit }}</p>
+            <p class="profile-row"><strong>Budget started</strong> — {{ user.budget_start_date }}</p>
+            <p class="profile-row"><strong>Current spend (cycle)</strong> — {{ user.get('current_spend', 0) }}</p>
+            {% else %}
+            <p>No profile loaded.</p>
+            {% endif %}
+            <a class="logout-link" href="{{ url_for('logout') }}">Sign out</a>
         </div>
-    </div>
-    
+    </main>
+
     <footer class="common-footer">
         YourTreasurer &copy; 2026 | Helping Hand
     </footer>
 
-   
-<script>
+    <script>
         const menuBtn = document.getElementById('menu-btn');
         const closeBtn = document.getElementById('close-btn');
         const sideNav = document.getElementById('side-nav');
         const backdrop = document.getElementById('menu-backdrop');
-        
-        const mainBg = document.getElementById('dynamic-bg');
         const hoverBg = document.getElementById('hover-bg');
         const navLinks = document.querySelectorAll('.nav-links a');
-        
-        // Set default background
-        const defaultBg = "{{ url_for('static', filename='images/bg.svg') }}";
-        mainBg.style.backgroundImage = `url(${defaultBg})`;
 
         function toggleMenu() {
             sideNav.classList.toggle('open');
@@ -68,55 +95,22 @@
                 document.body.style.width = '100%';
             } else {
                 document.body.style.position = '';
-                // Reset bg when menu closes
                 hoverBg.style.opacity = '0';
             }
         }
 
-        // --- Hover Animation Logic ---
         navLinks.forEach(link => {
-            if (!link.getAttribute('data-bg')) return;
+            if (link.getAttribute('href') === '/logout') return;
             link.addEventListener('mouseenter', () => {
-                const newImg = link.getAttribute('data-bg');
-                hoverBg.style.backgroundImage = `url(${newImg})`;
+                hoverBg.style.backgroundImage = `url(${link.getAttribute('data-bg')})`;
                 hoverBg.style.opacity = '1';
             });
-
-            link.addEventListener('mouseleave', () => {
-                hoverBg.style.opacity = '0';
-            });
+            link.addEventListener('mouseleave', () => { hoverBg.style.opacity = '0'; });
         });
 
         menuBtn.addEventListener('click', toggleMenu);
         closeBtn.addEventListener('click', toggleMenu);
         backdrop.addEventListener('click', toggleMenu);
-
-        function playDigitalUnlockChime() {
-            try {
-                var Ctx = window.AudioContext || window.webkitAudioContext;
-                if (!Ctx) return;
-                var ctx = new Ctx();
-                var o = ctx.createOscillator();
-                var g = ctx.createGain();
-                o.connect(g);
-                g.connect(ctx.destination);
-                o.type = 'sine';
-                o.frequency.setValueAtTime(523.25, ctx.currentTime);
-                o.frequency.exponentialRampToValueAtTime(783.99, ctx.currentTime + 0.12);
-                g.gain.setValueAtTime(0.0001, ctx.currentTime);
-                g.gain.exponentialRampToValueAtTime(0.12, ctx.currentTime + 0.03);
-                g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.35);
-                o.start(ctx.currentTime);
-                o.stop(ctx.currentTime + 0.36);
-            } catch (e) { /* ignore */ }
-        }
-        var _unlock = new URLSearchParams(window.location.search).get('unlocked');
-        if (_unlock === '1') {
-            playDigitalUnlockChime();
-            if (window.history.replaceState) {
-                window.history.replaceState({}, document.title, window.location.pathname || '/');
-            }
-        }
     </script>
 </body>
 </html>

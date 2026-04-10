@@ -164,7 +164,7 @@
         closeBtn.addEventListener('click', toggleMenu);
         backdrop.addEventListener('click', toggleMenu);
 
-        /* ---- Chart data: replace with fetch('/api/...') when backend aggregates are ready ---- */
+        /* ---- Chart data from MongoDB-backed /api/spend_data ---- */
         function hourLabels24() {
             const labels = [];
             for (let h = 0; h < 24; h++) {
@@ -175,41 +175,22 @@
             return labels;
         }
 
-        function last30DayLabels() {
-            const labels = [];
-            for (let i = 29; i >= 0; i--) {
-                const d = new Date();
-                d.setHours(0, 0, 0, 0);
-                d.setDate(d.getDate() - i);
-                labels.push(d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
-            }
-            return labels;
-        }
-
-        function stableDemoHourly() {
-            const base = [0, 0, 0, 0, 0, 15, 45, 120, 35, 0, 25, 180, 95, 0, 40, 60, 220, 150, 200, 45, 30, 0, 0, 0];
-            return base;
-        }
-
-        function stableDemoDaily() {
-            const out = [];
-            for (let i = 0; i < 30; i++) {
-                out.push(40 + ((i * 17 + 23) % 180));
-            }
-            return out;
+        function formatIsoLabel(isoDate) {
+            const d = new Date(isoDate + 'T00:00:00');
+            return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
         }
 
         const DATA_DAY = {
             labels: hourLabels24(),
-            data: stableDemoHourly(),
+            data: new Array(24).fill(0),
             title: 'Today — spending by hour',
             xTitle: 'Hour of day',
             yTitle: 'Amount spent'
         };
 
         const DATA_MONTH = {
-            labels: last30DayLabels(),
-            data: stableDemoDaily(),
+            labels: [],
+            data: [],
             title: 'Last 30 days — spending by day',
             xTitle: 'Date',
             yTitle: 'Amount spent'
@@ -320,6 +301,37 @@
 
         btnDay.addEventListener('click', () => applyView('day'));
         btnMonth.addEventListener('click', () => applyView('month'));
+
+        async function loadSpendData() {
+            try {
+                const res = await fetch('/api/spend_data', {
+                    headers: { 'Accept': 'application/json' },
+                    cache: 'no-store'
+                });
+                if (!res.ok) {
+                    return;
+                }
+                const payload = await res.json();
+                if (payload.day && Array.isArray(payload.day.data) && Array.isArray(payload.day.labels)) {
+                    DATA_DAY.data = payload.day.data;
+                    DATA_DAY.labels = payload.day.labels.map(v => {
+                        const h = Number(v);
+                        if (Number.isNaN(h)) return String(v);
+                        const hour12 = h % 12 === 0 ? 12 : h % 12;
+                        return hour12 + (h < 12 ? 'a' : 'p');
+                    });
+                }
+                if (payload.month && Array.isArray(payload.month.data) && Array.isArray(payload.month.labels)) {
+                    DATA_MONTH.data = payload.month.data;
+                    DATA_MONTH.labels = payload.month.labels.map(formatIsoLabel);
+                }
+                applyView('day');
+            } catch (err) {
+                console.error('Failed to fetch spend data:', err);
+            }
+        }
+
+        loadSpendData();
     </script>
 </body>
 </html>

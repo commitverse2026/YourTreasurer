@@ -1,4 +1,5 @@
 flask
+flask-pymongo
 pymongo[srv]
 flask-mail
 cloudinary
