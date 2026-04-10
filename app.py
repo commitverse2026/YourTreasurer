@@ -1,6 +1,7 @@
 import os
 import json
 import re
+import threading
 from datetime import datetime, timedelta
 from uuid import uuid4
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
@@ -11,10 +12,12 @@ from bson import ObjectId
 from bson.errors import InvalidId
 from dotenv import load_dotenv
 from flask import Flask, jsonify, redirect, render_template, request, session, url_for
-from flask_mail import Mail
+from flask_mail import Mail, Message
 from flask_pymongo import PyMongo
 from pymongo.errors import ConfigurationError, PyMongoError
 from werkzeug.security import check_password_hash, generate_password_hash
+
+load_dotenv()
 
 app = Flask(__name__, template_folder="Templates", static_folder="Static", static_url_path="/static")
 app.secret_key = "campuscoin_tracker_2026"
@@ -70,6 +73,7 @@ mail = Mail(app)
 
 app.config["MAX_CONTENT_LENGTH"] = 5 * 1024 * 1024  # 5MB limit for receipts
 LOCAL_USERS_FILE = os.path.join(app.root_path, "local_users.json")
+LOCAL_EXPENSES_FILE = os.path.join(app.root_path, "local_expenses.json")
 MONGO_AVAILABLE = None
 MONGO_LAST_CHECK = None
 MONGO_LAST_ERROR = ""
@@ -96,6 +100,29 @@ def users_collection():
         raise ConfigurationError(MONGO_INIT_ERROR or "MongoDB client is not initialized.")
     db_name = app.config["MONGO_DBNAME"]
     return mongo.cx[db_name]["users"]
+
+
+def daily_expenses_collection():
+    if mongo is None:
+        raise ConfigurationError(MONGO_INIT_ERROR or "MongoDB client is not initialized.")
+    db_name = app.config["MONGO_DBNAME"]
+    return mongo.cx[db_name]["daily_expenses"]
+
+
+def load_local_expenses():
+    if not os.path.exists(LOCAL_EXPENSES_FILE):
+        return []
+    try:
+        with open(LOCAL_EXPENSES_FILE, "r", encoding="utf-8") as f:
+            data = json.load(f)
+            return data if isinstance(data, list) else []
+    except (OSError, json.JSONDecodeError):
+        return []
+
+
+def save_local_expenses(expenses):
+    with open(LOCAL_EXPENSES_FILE, "w", encoding="utf-8") as f:
+        json.dump(expenses, f, indent=2, default=str)
 
 
 def is_password_valid(password):
@@ -203,10 +230,12 @@ def maybe_reset_cycle(user_doc):
     if now > start_date + timedelta(days=30):
         users_collection().update_one(
             {"_id": user_doc["_id"]},
-            {"$set": {"current_spend": 0, "start_date": now}},
+            {"$set": {"current_spend": 0, "start_date": now, "alert_10_sent": False, "alert_5_sent": False}},
         )
         user_doc["current_spend"] = 0
         user_doc["start_date"] = now
+        user_doc["alert_10_sent"] = False
+        user_doc["alert_5_sent"] = False
     return user_doc
 
 
@@ -222,8 +251,110 @@ def maybe_reset_cycle_local(user_doc):
     if now > start_date + timedelta(days=30):
         user_doc["current_spend"] = 0.0
         user_doc["start_date"] = now.isoformat()
+        user_doc["alert_10_sent"] = False
+        user_doc["alert_5_sent"] = False
         upsert_local_user(user_doc)
     return user_doc
+
+
+def send_guardian_alert(user_email, user_name, subject, body_html):
+    """Send a guardian budget alert email in a background thread."""
+    msg = Message(
+        subject=subject,
+        sender=app.config["MAIL_USERNAME"],
+        recipients=[user_email],
+    )
+    msg.html = body_html
+    t = threading.Thread(target=send_async_email, args=(app, msg))
+    t.daemon = True
+    t.start()
+
+
+def check_and_send_guardian_mails(user_doc, new_spend, use_local_store=False):
+    """
+    Compare new_spend against monthly_limit and fire tiered Guardian alerts.
+
+    Flags stored on the user document (reset each 30-day cycle via maybe_reset_cycle*):
+      alert_10_sent  – True after the 10%-remaining email is sent
+      alert_5_sent   – True after the 5%-remaining email is sent
+    The over-budget alert has no flag and fires for every new expense while in deficit.
+    """
+    monthly_limit = float(user_doc.get("monthly_limit") or 0)
+    if monthly_limit <= 0:
+        return
+
+    remaining = monthly_limit - new_spend
+    pct_remaining = (remaining / monthly_limit) * 100
+    user_name = user_doc.get("name", "")
+    user_email = user_doc.get("email", "")
+
+    # Guard: no email address stored → nothing to send
+    if not user_email:
+        return
+
+    alert_10_sent = bool(user_doc.get("alert_10_sent", False))
+    alert_5_sent = bool(user_doc.get("alert_5_sent", False))
+
+    def _update_flag(flag_name):
+        if use_local_store:
+            user_doc[flag_name] = True
+            upsert_local_user(user_doc)
+        else:
+            try:
+                users_collection().update_one(
+                    {"_id": user_doc["_id"]},
+                    {"$set": {flag_name: True}},
+                )
+            except PyMongoError:
+                pass
+
+    if pct_remaining <= 0:
+        # Over-budget: send every time
+        subject = "⛔ YourTreasurer: Budget Exhausted!"
+        body = f"""
+        <div style="font-family:Poppins,sans-serif;padding:24px;background:#1a0a2e;color:#fff;border-radius:8px;">
+          <h2 style="color:#ff4444;">⛔ Over-Budget Alert</h2>
+          <p>Hi <strong>{user_name}</strong>,</p>
+          <p>You have <strong>exceeded your monthly budget of ₹{monthly_limit:.2f}</strong>.</p>
+          <p>Current spend: <strong>₹{new_spend:.2f}</strong> &nbsp;|&nbsp; Over by: <strong>₹{abs(remaining):.2f}</strong></p>
+          <p style="color:#ff4444;">Please stop adding new expenses — every new entry will continue triggering this alert.</p>
+          <hr style="border-color:#444;">
+          <p style="font-size:12px;color:#aaa;">— YourTreasurer Guardian System</p>
+        </div>
+        """
+        send_guardian_alert(user_email, user_name, subject, body)
+
+    elif pct_remaining <= 5 and not alert_5_sent:
+        subject = "🚨 YourTreasurer: Critical — Only 5% Budget Left!"
+        body = f"""
+        <div style="font-family:Poppins,sans-serif;padding:24px;background:#1a0a2e;color:#fff;border-radius:8px;">
+          <h2 style="color:#ff8800;">🚨 Critical Budget Warning</h2>
+          <p>Hi <strong>{user_name}</strong>,</p>
+          <p>You have only <strong>{pct_remaining:.1f}% (₹{remaining:.2f})</strong> of your monthly budget remaining.</p>
+          <p>Monthly limit: ₹{monthly_limit:.2f} &nbsp;|&nbsp; Spent so far: ₹{new_spend:.2f}</p>
+          <p>Be very cautious with your next expenses.</p>
+          <hr style="border-color:#444;">
+          <p style="font-size:12px;color:#aaa;">— YourTreasurer Guardian System</p>
+        </div>
+        """
+        send_guardian_alert(user_email, user_name, subject, body)
+        _update_flag("alert_5_sent")
+
+    elif pct_remaining <= 10 and not alert_10_sent:
+        subject = "⚠️ YourTreasurer: Only 10% Budget Remaining"
+        body = f"""
+        <div style="font-family:Poppins,sans-serif;padding:24px;background:#1a0a2e;color:#fff;border-radius:8px;">
+          <h2 style="color:#ffcc00;">⚠️ Budget Caution Alert</h2>
+          <p>Hi <strong>{user_name}</strong>,</p>
+          <p>You have only <strong>{pct_remaining:.1f}% (₹{remaining:.2f})</strong> of your monthly budget remaining.</p>
+          <p>Monthly limit: ₹{monthly_limit:.2f} &nbsp;|&nbsp; Spent so far: ₹{new_spend:.2f}</p>
+          <p>Time to slow down on spending!</p>
+          <hr style="border-color:#444;">
+          <p style="font-size:12px;color:#aaa;">— YourTreasurer Guardian System</p>
+        </div>
+        """
+        send_guardian_alert(user_email, user_name, subject, body)
+        _update_flag("alert_10_sent")
 
 
 def build_user_payload(user_doc):
@@ -465,17 +596,102 @@ def about_us():
 @app.route('/add_expense', methods=['POST'])
 def add_expense():
     """Handles adding a new daily expense."""
-    try:
-        form_data = request.form.to_dict()
-        
-        # 1. TODO: Handle Cloudinary receipt upload if 'receipt_image' exists in request.files
-        # 2. TODO: Insert form_data into MongoDB 'expenses' collection
-        # 3. TODO: Calculate if total month spend > 90% of threshold. If yes, trigger send_async_email()
+    if not session.get("user_id"):
+        return jsonify({"success": False, "message": "Not logged in."}), 401
 
+    try:
+        category = request.form.get("category", "Other").strip()
+        amount_raw = request.form.get("amount", "0").strip()
+        spent_at = request.form.get("spent_at", "").strip()
+
+        try:
+            amount = float(amount_raw)
+        except ValueError:
+            return jsonify({"success": False, "message": "Invalid amount."}), 400
+        if amount <= 0:
+            return jsonify({"success": False, "message": "Amount must be greater than 0."}), 400
+
+        user_name = session.get("user_name", "")
+        receipt_url = None
+
+        # 1. Cloudinary receipt upload
+        receipt_file = request.files.get("receipt_image")
+        if receipt_file and receipt_file.filename:
+            try:
+                upload_result = cloudinary.uploader.upload(
+                    receipt_file,
+                    folder="yourtreasurer/receipts",
+                    resource_type="image",
+                )
+                receipt_url = upload_result.get("secure_url")
+            except Exception as cloud_err:
+                print(f"Cloudinary upload error: {cloud_err}")
+
+        now = datetime.utcnow()
+        expense_doc = {
+            "category": category,
+            "amount": amount,
+            "spent_at": spent_at,
+            "is_loan": False,
+            "receipt_url": receipt_url,
+            "created_at": now,
+            "created_by": user_name,
+        }
+
+        use_local_store = not is_mongo_available()
+        user_doc = None
+
+        if use_local_store:
+            local_id = session["user_id"].replace("local:", "", 1)
+            user_doc = get_local_user_by_id(local_id)
+            if not user_doc:
+                return jsonify({"success": False, "message": "User not found."}), 404
+
+            # Save expense locally
+            local_expenses = load_local_expenses()
+            expense_doc["_id"] = str(uuid4())
+            expense_doc["created_at"] = now.isoformat()
+            local_expenses.append(expense_doc)
+            save_local_expenses(local_expenses)
+
+            # Update current_spend
+            new_spend = float(user_doc.get("current_spend", 0) or 0) + amount
+            user_doc["current_spend"] = new_spend
+            upsert_local_user(user_doc)
+        else:
+            try:
+                daily_expenses_collection().insert_one(expense_doc)
+
+                # Atomically increment current_spend and retrieve updated doc
+                user_doc = users_collection().find_one_and_update(
+                    {"name": user_name},
+                    {"$inc": {"current_spend": amount}},
+                    return_document=True,
+                )
+                if not user_doc:
+                    return jsonify({"success": False, "message": "User not found."}), 404
+                new_spend = float(user_doc.get("current_spend", 0) or 0)
+            except PyMongoError as db_err:
+                print(f"DB error in add_expense: {db_err}")
+                return jsonify({"success": False, "message": "Database error. Please try again."}), 503
+
+        # 3. Guardian mail check
+        check_and_send_guardian_mails(user_doc, new_spend, use_local_store=use_local_store)
+
+        # Support both AJAX and regular form submit
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest" or request.is_json:
+            monthly_limit = float(user_doc.get("monthly_limit") or 0)
+            return jsonify({
+                "success": True,
+                "new_spend": new_spend,
+                "monthly_limit": monthly_limit,
+                "over_budget": new_spend > monthly_limit,
+            })
         return redirect(url_for('my_expenses'))
+
     except Exception as e:
         print(f"Expense Submit Error: {e}")
-        return f"Submission failed: {e}", 500
+        return jsonify({"success": False, "message": f"Submission failed: {e}"}), 500
 
 @app.route('/add_friend_loan', methods=['POST'])
 def add_friend_loan():
@@ -559,6 +775,39 @@ def api_my_profile():
             "user": build_user_payload(user_doc),
         }
     )
+
+
+@app.route("/api/budget_status")
+def budget_status():
+    """Return current spend vs limit so the home page can show the over-budget pulse."""
+    if not session.get("user_id"):
+        return jsonify({"success": False, "over_budget": False}), 401
+
+    user_doc = None
+    if session["user_id"].startswith("local:"):
+        local_id = session["user_id"].replace("local:", "", 1)
+        user_doc = get_local_user_by_id(local_id)
+    else:
+        if is_mongo_available():
+            try:
+                user_doc = users_collection().find_one({"_id": ObjectId(session["user_id"])})
+            except (InvalidId, PyMongoError):
+                pass
+
+    if not user_doc:
+        return jsonify({"success": False, "over_budget": False}), 404
+
+    monthly_limit = float(user_doc.get("monthly_limit") or 0)
+    current_spend = float(user_doc.get("current_spend") or 0)
+    over_budget = monthly_limit > 0 and current_spend > monthly_limit
+
+    return jsonify({
+        "success": True,
+        "over_budget": over_budget,
+        "current_spend": current_spend,
+        "monthly_limit": monthly_limit,
+        "pct_used": round((current_spend / monthly_limit * 100), 1) if monthly_limit > 0 else 0,
+    })
 
 
 @app.errorhandler(413)

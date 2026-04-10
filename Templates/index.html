@@ -35,8 +35,11 @@
 
     <div class="main-layout-wrapper">
         <div class="content-container">
-            <h1 class="title">YourTreasurer</h1>
+            <h1 class="title" id="main-title">YourTreasurer</h1>
             <p class="subtitle">Smart Spending for Smart Ones</p>
+            <div id="over-budget-banner" class="over-budget-banner" style="display:none;">
+                ⛔ You are over budget! Please review your expenses.
+            </div>
         </div>
     </div>
     
@@ -88,6 +91,46 @@
         menuBtn.addEventListener('click', toggleMenu);
         closeBtn.addEventListener('click', toggleMenu);
         backdrop.addEventListener('click', toggleMenu);
+
+        // --- Guardian: Over-Budget Pulse ---
+        async function checkBudgetStatus() {
+            try {
+                const res = await fetch('/api/budget_status');
+                if (!res.ok) return;
+                const data = await res.json();
+                if (data.success && data.over_budget) {
+                    const title = document.getElementById('main-title');
+                    const banner = document.getElementById('over-budget-banner');
+                    title.classList.add('over-budget-pulse');
+                    banner.style.display = 'block';
+                }
+            } catch (e) {
+                // not logged in or network error — silently ignore
+            }
+        }
+        checkBudgetStatus();
     </script>
+
+    <style>
+        @keyframes guardianPulse {
+            0%   { color: inherit; text-shadow: none; }
+            50%  { color: #ff3333; text-shadow: 0 0 18px #ff3333, 0 0 36px #ff000088; }
+            100% { color: inherit; text-shadow: none; }
+        }
+        .over-budget-pulse {
+            animation: guardianPulse 1.2s ease-in-out infinite;
+        }
+        .over-budget-banner {
+            margin-top: 12px;
+            padding: 10px 20px;
+            background: rgba(255, 51, 51, 0.15);
+            border: 1px solid #ff3333;
+            border-radius: 8px;
+            color: #ff3333;
+            font-weight: 600;
+            font-size: 0.95rem;
+            letter-spacing: 0.5px;
+        }
+    </style>
 </body>
 </html>
