@@ -811,12 +811,7 @@
         // --- MARK LOAN AS RETURNED ---
         async function markLoanReturned(loanId, friendName, loanAmount) {
             const btn = event.target;
-            const username = '{{ session.get("username", "User") }}';
-
-            if (!username || username === 'User') {
-                alert('Please log in first!');
-                return;
-            }
+            const username = '{{ session.get("username", "demo") }}';
 
             const originalText = btn.innerHTML;
             btn.innerHTML = '<span class="loading-spinner"></span> Processing...';

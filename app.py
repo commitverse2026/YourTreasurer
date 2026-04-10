@@ -3,13 +3,16 @@ from flask_pymongo import PyMongo
 from flask_mail import Mail, Message
 from werkzeug.utils import secure_filename
 from bson.objectid import ObjectId
+from dotenv import load_dotenv
 import os
-import uuid 
+import uuid
 import threading
 import time
 import cloudinary
 import cloudinary.uploader
 from datetime import datetime
+
+load_dotenv()
 
 app = Flask(__name__)
 app.secret_key = "campuscoin_tracker_2026"
@@ -17,15 +20,14 @@ app.secret_key = "campuscoin_tracker_2026"
 # --- CONFIGURATION ---
 
 # 1. Cloudinary Setup (Participants will use this for receipt uploads)
-cloudinary.config( 
-    cloud_name = os.environ.get("CLOUDINARY_NAME", "your_cloud_name"), 
-    api_key = os.environ.get("CLOUDINARY_KEY", "your_api_key"), 
-    api_secret = os.environ.get("CLOUDINARY_SECRET", "your_api_secret") 
+cloudinary.config(
+    cloud_name = os.environ.get("CLOUDINARY_NAME", "your_cloud_name"),
+    api_key = os.environ.get("CLOUDINARY_KEY", "your_api_key"),
+    api_secret = os.environ.get("CLOUDINARY_SECRET", "your_api_secret")
 )
 
 # 2. MongoDB & Mail Setup
-# TODO for Participants: Insert your free MongoDB Atlas URI here
-app.config["MONGO_URI"] = "mongodb+srv://priteepardeshi3011_db_user:o1UpyYozHv4zvlTn@cluster0.a5drjzn.mongodb.net/"
+app.config["MONGO_URI"] = os.environ.get("MONGO_URI", "mongodb://localhost:27017/treasurer_db")
 mongo = PyMongo(app)
 
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
