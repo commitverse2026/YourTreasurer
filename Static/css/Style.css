@@ -558,7 +558,50 @@ body, html {
     }
 }
 
-/* --- 14. TABLET & LAPTOP ADJUSTMENTS --- */
+/* --- 14. EDIT PROFILE FORM --- */
+.edit-profile-form {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(15px);
+    padding: 40px;
+    border-radius: 25px;
+    box-shadow: 0 15px 50px rgba(15, 40, 84, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    max-width: 500px;
+    margin: 30px auto;
+    transition: var(--transition-smooth);
+}
+
+.edit-profile-form:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 20px 60px rgba(15, 40, 84, 0.2);
+}
+
+.edit-title {
+    color: var(--navy-dark);
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin-bottom: 30px;
+    text-align: center;
+}
+
+.form-actions {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    margin-top: 30px;
+}
+
+.btn-warning {
+    background: linear-gradient(135deg, #ff9800, #ffb74d);
+    color: white;
+}
+
+.btn-warning:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 30px rgba(255, 152, 0, 0.2);
+}
+
+/* --- 15. TABLET & LAPTOP ADJUSTMENTS --- */
 @media (min-width: 768px) {
     .nav-links a { font-size: 1.8rem; }
     .side-nav { width: 350px; }

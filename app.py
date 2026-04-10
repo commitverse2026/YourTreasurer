@@ -203,6 +203,62 @@ def register():
         flash("Registration failed. Please try again.", "error")
         return redirect(url_for('my_profile'))
 
+@app.route('/update_profile', methods=['POST'])
+def update_profile():
+    """Handle user profile update."""
+    try:
+        # Check if user is logged in
+        if 'user_name' not in session:
+            flash("Please login to update your profile.", "error")
+            return redirect(url_for('my_profile'))
+        
+        # Get form data
+        name = request.form.get('name')
+        monthly_limit = float(request.form.get('monthly_limit'))
+        password = request.form.get('password')
+        
+        # Validate input
+        if len(name) < 3:
+            flash("Name must be at least 3 characters long.", "error")
+            return redirect(url_for('my_profile'))
+        
+        if monthly_limit < 100:
+            flash("Monthly budget must be at least Rs. 100.", "error")
+            return redirect(url_for('my_profile'))
+        
+        # Prepare update data
+        update_data = {
+            "name": name,
+            "monthly_limit": monthly_limit,
+            "updated_at": datetime.now()
+        }
+        
+        # Update password only if provided
+        if password and len(password) >= 6:
+            update_data["password"] = password
+        
+        # Update user in MongoDB
+        result = mongo.db.users.update_one(
+            {"name": session['user_name']},
+            {"$set": update_data}
+        )
+        
+        if result.modified_count > 0:
+            # Update session if name changed
+            if name != session['user_name']:
+                session['user_name'] = name
+            
+            flash("Profile updated successfully!", "success")
+        else:
+            flash("No changes made to your profile.", "info")
+        
+        return redirect(url_for('my_profile'))
+        
+    except Exception as e:
+        print(f"Profile Update Error: {e}")
+        flash("Failed to update profile. Please try again.", "error")
+        return redirect(url_for('my_profile'))
+
 @app.route('/logout')
 def logout():
     """Handle user logout."""
