@@ -228,3 +228,135 @@ body, html {
     .side-nav { width: 350px; }
     .common-footer { font-size: 0.85rem; }
 }
+.profile-form {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    padding: 2rem;
+    border-radius: 15px;
+    margin-top: 1rem;
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 10px;
+    border-radius: 5px;
+    border: 1px solid rgba(255,255,255,0.3);
+    background: rgba(255,255,255,0.2);
+    color: white;
+}
+
+.submit-btn {
+    padding: 10px 20px;
+    background: #6c5ce7;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+/* --- 9. LOGIN BOX / FORM STYLING --- */
+
+.login-box {
+    margin-top: 30px;
+    padding: 2.5rem 2rem;
+    width: min(90vw, 380px);
+
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(14px);
+
+    border-radius: 20px;
+    border: 1px solid rgba(255,255,255,0.25);
+
+    box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+
+    transition: var(--transition-smooth);
+}
+
+/* Slight hover lift */
+.login-box:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 25px 60px rgba(0,0,0,0.2);
+}
+
+
+/* --- INPUT FIELDS --- */
+
+.input-field {
+    width: 100%;
+    padding: 12px 14px;
+
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.3);
+
+    background: rgba(255,255,255,0.2);
+    backdrop-filter: blur(5px);
+
+    color: var(--navy-dark);
+    font-size: 0.95rem;
+
+    outline: none;
+    transition: var(--transition-smooth);
+}
+
+/* Placeholder styling */
+.input-field::placeholder {
+    color: rgba(15, 40, 84, 0.6);
+}
+
+/* Focus effect */
+.input-field:focus {
+    border-color: var(--blue-mid);
+    background: rgba(255,255,255,0.35);
+    box-shadow: 0 0 0 2px rgba(28, 77, 141, 0.2);
+}
+
+
+/* --- BUTTON --- */
+
+.btn-primary {
+    margin-top: 10px;
+    padding: 12px;
+
+    border: none;
+    border-radius: 50px;
+
+    background: linear-gradient(135deg, var(--blue-mid), var(--blue-soft));
+    color: white;
+
+    font-weight: 600;
+    font-size: 1rem;
+
+    cursor: pointer;
+    transition: var(--transition-smooth);
+
+    box-shadow: 0 10px 25px rgba(28, 77, 141, 0.3);
+}
+
+/* Hover */
+.btn-primary:hover {
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 0 15px 35px rgba(28, 77, 141, 0.4);
+}
+
+/* Click */
+.btn-primary:active {
+    transform: scale(0.97);
+}
+
+
+/* --- RESPONSIVE TOUCH --- */
+
+@media (max-width: 480px) {
+    .login-box {
+        padding: 2rem 1.5rem;
+    }
+}

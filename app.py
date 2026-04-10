@@ -1,149 +1,161 @@
-from flask import Flask, render_template, request, flash, redirect, url_for, jsonify
+from flask import Flask, render_template, request, flash, redirect, url_for, jsonify, session
 from flask_pymongo import PyMongo
 from flask_mail import Mail, Message
-from werkzeug.utils import secure_filename
 import os
-import uuid 
-import threading
-import time
+from datetime import datetime, timedelta
+from dotenv import load_dotenv
 import cloudinary
-import cloudinary.uploader
-from datetime import datetime
+import threading
+
+load_dotenv()
 
 app = Flask(__name__)
-app.secret_key = "campuscoin_tracker_2026"
+app.secret_key = os.getenv("SECRET_KEY")
 
-# --- CONFIGURATION ---
+# ------------------ CONFIGURATION ------------------
 
-# 1. Cloudinary Setup (Participants will use this for receipt uploads)
-cloudinary.config( 
-    cloud_name = os.environ.get("CLOUDINARY_NAME", "your_cloud_name"), 
-    api_key = os.environ.get("CLOUDINARY_KEY", "your_api_key"), 
-    api_secret = os.environ.get("CLOUDINARY_SECRET", "your_api_secret") 
+# ☁️ Cloudinary
+cloudinary.config(
+    cloud_name=os.getenv("CLOUDINARY_NAME"),
+    api_key=os.getenv("CLOUDINARY_KEY"),
+    api_secret=os.getenv("CLOUDINARY_SECRET")
 )
 
-# 2. MongoDB & Mail Setup
-# TODO for Participants: Insert your free MongoDB Atlas URI here
-app.config["MONGO_URI"] = "mongodb+srv://priteepardeshi3011_db_user:o1UpyYozHv4zvlTn@cluster0.a5drjzn.mongodb.net/"
+# 🧠 MongoDB Atlas
+app.config["MONGO_URI"] = os.getenv("MONGO_URI")
 mongo = PyMongo(app)
 
+# 📩 Mail Config
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
-app.config['MAIL_USERNAME'] = os.environ.get("MAIL_USER", 'your_email@gmail.com')
-app.config['MAIL_PASSWORD'] = os.environ.get("MAIL_PASS", 'your_app_password') 
+app.config['MAIL_USERNAME'] = os.getenv("MAIL_USERNAME")
+app.config['MAIL_PASSWORD'] = os.getenv("MAIL_PASSWORD")
 mail = Mail(app)
 
-app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024 # 5MB limit for receipts
+# 📦 File limit
+app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024
 
-# --- ASYNC BACKGROUND TASKS ---
+# ------------------ EMAIL ASYNC ------------------
 
 def send_async_email(app, msg):
-    """Function to send email in a background thread to prevent UI freezing."""
     with app.app_context():
         try:
             mail.send(msg)
-            print("Email sent successfully!")
+            print("Email sent!")
         except Exception as e:
-            print(f"Background Mail Error: {e}")
+            print(f"Mail Error: {e}")
 
-# --- GLOBAL CHECKS ---
+# ------------------ GLOBAL CHECK ------------------
 
 @app.before_request
+@app.before_request
 def check_budget_setup():
-    """
-    TODO Task 1: Check if the user has set up their initial monthly budget.
-    If they haven't (and they aren't on static/profile pages), redirect them to MyProfile.
-    """
-    pass 
+    # List of endpoints that DON'T need a login
+    allowed_routes = ['my_profile', 'static']
 
-# --- CORE NAVIGATION ROUTES ---
+    if request.endpoint not in allowed_routes:
+        if "user" not in session:
+            return redirect(url_for('my_profile'))
+# ------------------ ROUTES ------------------
 
+# 🏠 Home (Dashboard)
 @app.route('/')
 def home():
-    # TODO: Fetch today's expenses to show a quick summary on the home dashboard
-    return render_template('index.html')
+    if "user" not in session:
+        return redirect(url_for('my_profile'))
 
-@app.route('/my_profile')
+    user = mongo.db.users.find_one({"name": session["user"]})
+    return render_template('index.html', user=user)
+
+# 👤 Profile (LOGIN + REGISTER)
+@app.route('/my_profile', methods=["GET", "POST"])
+# 👤 Profile (LOGIN + REGISTER)
+@app.route('/my_profile', methods=["GET", "POST"])
 def my_profile():
-    # TODO: Fetch user's current budget threshold from MongoDB
-    return render_template('profile.html')
+    if request.method == "POST":
+        name = request.form.get("name")
+        password = request.form.get("password")
+        monthly_limit = request.form.get("limit")
 
+        # 1. Look for user in database
+        user = mongo.db.users.find_one({"name": name})
+
+        if user:
+            # 🟢 EXISTING USER LOGIN (Task 1 Logic)
+            if user["password"] == password:
+                session["user"] = name
+                
+                # Check for 30-day reset (Optional but good for Task 1)
+                start_date = datetime.strptime(user["start_date"], "%Y-%m-%d")
+                if datetime.now() > start_date + timedelta(days=30):
+                    mongo.db.users.update_one(
+                        {"name": name},
+                        {"$set": {"current_spend": 0, "start_date": datetime.now().strftime("%Y-%m-%d")}}
+                    )
+                
+                return redirect(url_for('home'))
+            else:
+                return "❌ Invalid Password" # You can use flash() here later
+        else:
+            # 🆕 NEW USER REGISTER
+            if not monthly_limit:
+                return "⚠️ Please provide a monthly budget to register."
+
+            mongo.db.users.insert_one({
+                "name": name,
+                "password": password,
+                "monthly_limit": int(monthly_limit),
+                "current_spend": 0,
+                "start_date": datetime.now().strftime("%Y-%m-%d")
+            })
+            session["user"] = name
+            return redirect(url_for('home'))
+
+    return render_template('profile.html')
+# 🔓 Logout
+@app.route('/logout')
+def logout():
+    session.clear()
+    return redirect(url_for('my_profile'))
+
+# 📊 Expenses Page (placeholder for next feature)
 @app.route('/my_expenses')
 def my_expenses():
-    # TODO: Fetch all expenses from MongoDB, sort by date, and pass to template
     return render_template('expenses.html')
 
+# 📈 Analysis Page
 @app.route('/analysis')
 def analysis():
     return render_template('analysis.html')
 
+# 🔁 Interval Spend Page
 @app.route('/interval_spend')
 def interval_spend():
-    # TODO: Fetch EMI and Subscription data to display upcoming dues
     return render_template('interval_spend.html')
 
+# ℹ️ About Page
 @app.route('/about_us')
 def about_us():
     return render_template('about_us.html')
 
-# --- DATA SUBMISSION ROUTES (THE LOGIC) ---
-
-@app.route('/add_expense', methods=['POST'])
-def add_expense():
-    """Handles adding a new daily expense."""
-    try:
-        form_data = request.form.to_dict()
-        
-        # 1. TODO: Handle Cloudinary receipt upload if 'receipt_image' exists in request.files
-        # 2. TODO: Insert form_data into MongoDB 'expenses' collection
-        # 3. TODO: Calculate if total month spend > 90% of threshold. If yes, trigger send_async_email()
-
-        return redirect(url_for('my_expenses'))
-    except Exception as e:
-        print(f"Expense Submit Error: {e}")
-        return f"Submission failed: {e}", 500
-
-@app.route('/add_friend_loan', methods=['POST'])
-def add_friend_loan():
-    """Handles logging money given to a friend and sending initial email."""
-    try:
-        form_data = request.form.to_dict()
-        # TODO: Save loan to database
-        # TODO: Send async email to friend stating "You owe me money for..."
-        
-        return redirect(url_for('my_expenses'))
-    except Exception as e:
-        return "Internal Error", 500
-
-@app.route('/add_interval_spend', methods=['POST'])
-def add_interval_spend():
-    """Handles adding EMIs, Hostel Fees, Subscriptions."""
-    try:
-        form_data = request.form.to_dict()
-        # TODO: Save interval spend to MongoDB, calculate next due date
-        return redirect(url_for('interval_spend'))
-    except Exception as e:
-        return "Internal Error", 500
-
-# --- API ROUTES (FOR REAL-TIME CHARTS) ---
+# ------------------ API (DUMMY FOR NOW) ------------------
 
 @app.route('/api/spend_data')
 def spend_data():
-    """API endpoint to feed the Doughnut and Line charts in the Analysis tab."""
-    # TODO Task 4: Query MongoDB, group expenses by Category (Hostel, Junk Food, etc.)
-    # Return as JSON so JavaScript can draw the charts without reloading the page
-    
     dummy_data = {
-        "categories": ["Educational", "Lifestyle", "Healthy Food", "Junk Food", "Hostel Rent", "Travelling"],
-        "amounts": [1200, 500, 800, 300, 5000, 450]
+        "categories": ["Educational", "Lifestyle", "Healthy Food", "Junk Food"],
+        "amounts": [1200, 500, 800, 300]
     }
     return jsonify(dummy_data)
 
+# ------------------ ERROR HANDLER ------------------
 
 @app.errorhandler(413)
 def request_entity_too_large(error):
-    return "<h1>Receipt file is too large!</h1><p>Please keep your screenshot under 5MB.</p><a href='/my_expenses'>Try Again</a>", 413
+    return "<h1>File too large!</h1><a href='/my_expenses'>Try Again</a>", 413
+
+# ------------------ RUN ------------------
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+    app.run(debug=True)
