@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Budget Progress Bar | Real-Time Tracking</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 600px;
+            width: 100%;
+        }
+
+        .card {
+            background: white;
+            border-radius: 30px;
+            padding: 40px;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.3);
+        }
+
+        h1 {
+            color: #2d3748;
+            margin-bottom: 10px;
+            font-size: 1.8rem;
+        }
+
+        .subtitle {
+            color: #718096;
+            margin-bottom: 30px;
+        }
+
+        /* Budget Input Section */
+        .budget-section {
+            background: #f7fafc;
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #4a5568;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 1rem;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        /* Progress Bar */
+        .progress-section {
+            margin-bottom: 30px;
+        }
+
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .progress-bar-container {
+            background: #e2e8f0;
+            border-radius: 50px;
+            height: 30px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .progress-fill {
+            background: linear-gradient(90deg, #48bb78, #38a169);
+            width: 0%;
+            height: 100%;
+            border-radius: 50px;
+            transition: width 0.5s ease;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding-right: 15px;
+            color: white;
+            font-weight: bold;
+            font-size: 0.85rem;
+        }
+
+        .progress-fill.warning {
+            background: linear-gradient(90deg, #ed8936, #dd6b20);
+        }
+
+        .progress-fill.danger {
+            background: linear-gradient(90deg, #ef4444, #dc2626);
+        }
+
+        /* Stats */
+        .stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: #f7fafc;
+            padding: 15px;
+            border-radius: 15px;
+            text-align: center;
+        }
+
+        .stat-label {
+            color: #718096;
+            font-size: 0.8rem;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #2d3748;
+        }
+
+        /* Expenses List */
+        .expenses-section {
+            margin-top: 20px;
+        }
+
+        .expenses-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .add-expense-form {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .add-expense-form input {
+            flex: 1;
+            padding: 10px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+        }
+
+        .add-expense-form button {
+            padding: 10px 20px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+        }
+
+        .expense-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .expense-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            background: #f7fafc;
+            border-radius: 10px;
+            margin-bottom: 8px;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .expense-details {
+            flex: 1;
+        }
+
+        .expense-name {
+            font-weight: 600;
+            color: #2d3748;
+        }
+
+        .expense-date {
+            font-size: 0.7rem;
+            color: #a0aec0;
+        }
+
+        .expense-amount {
+            font-weight: bold;
+            color: #ef4444;
+        }
+
+        .delete-expense {
+            background: none;
+            border: none;
+            font-size: 1.2rem;
+            cursor: pointer;
+            color: #a0aec0;
+            padding: 5px 10px;
+        }
+
+        .delete-expense:hover {
+            color: #ef4444;
+        }
+
+        .total-spent {
+            font-size: 1.2rem;
+            font-weight: bold;
+            text-align: right;
+            padding-top: 15px;
+            border-top: 2px solid #e2e8f0;
+            margin-top: 10px;
+        }
+
+        .alert {
+            padding: 12px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            animation: slideIn 0.3s ease;
+        }
+
+        .alert-warning {
+            background: #fef3c7;
+            color: #92400e;
+            border-left: 4px solid #f59e0b;
+        }
+
+        .alert-danger {
+            background: #fee2e2;
+            color: #991b1b;
+            border-left: 4px solid #ef4444;
+        }
+
+        .alert-success {
+            background: #d1fae5;
+            color: #065f46;
+            border-left: 4px solid #10b981;
+        }
+
+        button {
+            transition: all 0.2s;
+        }
+
+        button:hover {
+            transform: scale(1.02);
+        }
+
+        .reset-btn {
+            background: #ef4444;
+            margin-top: 20px;
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 10px;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <h1>💰 Budget Progress Tracker</h1>
+            <p class="subtitle">Track your spending in real-time</p>
+
+            <div id="alertContainer"></div>
+
+            <!-- Budget Setup -->
+            <div class="budget-section">
+                <div class="input-group">
+                    <label>📊 Monthly Budget (₹)</label>
+                    <input type="number" id="budgetInput" placeholder="Enter your monthly budget" value="50000">
+                </div>
+                <button onclick="updateBudget()" style="width:100%; padding:10px; background:#667eea; color:white; border:none; border-radius:10px;">Set Budget</button>
+            </div>
+
+            <!-- Progress Bar -->
+            <div class="progress-section">
+                <div class="progress-header">
+                    <span>📈 Spending Progress</span>
+                    <span id="progressPercent">0%</span>
+                </div>
+                <div class="progress-bar-container">
+                    <div class="progress-fill" id="progressFill">
+                        <span id="progressText"></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stats -->
+            <div class="stats">
+                <div class="stat-card">
+                    <div class="stat-label">Budget</div>
+                    <div class="stat-value" id="budgetAmount">₹50,000</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Total Spent</div>
+                    <div class="stat-value" id="totalSpent">₹0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Remaining</div>
+                    <div class="stat-value" id="remainingAmount">₹50,000</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Daily Avg</div>
+                    <div class="stat-value" id="dailyAvg">₹0</div>
+                </div>
+            </div>
+
+            <!-- Add Expense -->
+            <div class="expenses-section">
+                <div class="expenses-header">
+                    <h3>📝 Add Expense</h3>
+                </div>
+                <div class="add-expense-form">
+                    <input type="text" id="expenseName" placeholder="What did you buy?" style="flex:2;">
+                    <input type="number" id="expenseAmount" placeholder="Amount" style="flex:1;">
+                    <button onclick="addExpense()">+ Add</button>
+                </div>
+
+                <h3>📋 Recent Expenses</h3>
+                <div class="expense-list" id="expenseList">
+                    <div style="text-align: center; color: #a0aec0; padding: 20px;">No expenses yet. Add your first expense!</div>
+                </div>
+
+                <div class="total-spent" id="totalSpentFooter">Total Spent: ₹0</div>
+            </div>
+
+            <button class="reset-btn" onclick="resetAll()">🔄 Reset All Data</button>
+        </div>
+    </div>
+
+    <script>
+        // Data storage (uses localStorage - no backend needed!)
+        let monthlyBudget = 50000;
+        let expenses = [];
+
+        // Load saved data from localStorage
+        function loadData() {
+            const savedBudget = localStorage.getItem('monthlyBudget');
+            const savedExpenses = localStorage.getItem('expenses');
+            
+            if (savedBudget) monthlyBudget = parseFloat(savedBudget);
+            if (savedExpenses) expenses = JSON.parse(savedExpenses);
+            
+            document.getElementById('budgetInput').value = monthlyBudget;
+            updateUI();
+        }
+
+        // Save data to localStorage
+        function saveData() {
+            localStorage.setItem('monthlyBudget', monthlyBudget);
+            localStorage.setItem('expenses', JSON.stringify(expenses));
+        }
+
+        // Calculate total spent
+        function getTotalSpent() {
+            return expenses.reduce((sum, exp) => sum + exp.amount, 0);
+        }
+
+        // Calculate remaining budget
+        function getRemaining() {
+            return monthlyBudget - getTotalSpent();
+        }
+
+        // Calculate percentage
+        function getPercentage() {
+            return (getTotalSpent() / monthlyBudget) * 100;
+        }
+
+        // Update UI
+        function updateUI() {
+            const totalSpent = getTotalSpent();
+            const remaining = getRemaining();
+            const percentage = getPercentage();
+            
+            // Update stats
+            document.getElementById('budgetAmount').innerHTML = `₹${monthlyBudget.toLocaleString()}`;
+            document.getElementById('totalSpent').innerHTML = `₹${totalSpent.toLocaleString()}`;
+            document.getElementById('remainingAmount').innerHTML = `₹${remaining.toLocaleString()}`;
+            document.getElementById('totalSpentFooter').innerHTML = `Total Spent: ₹${totalSpent.toLocaleString()}`;
+            
+            // Update progress bar
+            const percentValue = Math.min(percentage, 100);
+            document.getElementById('progressPercent').innerHTML = `${percentValue.toFixed(1)}%`;
+            document.getElementById('progressFill').style.width = `${percentValue}%`;
+            document.getElementById('progressText').innerHTML = percentValue > 15 ? `${percentValue.toFixed(0)}%` : '';
+            
+            // Change color based on threshold
+            const progressFill = document.getElementById('progressFill');
+            progressFill.classList.remove('warning', 'danger');
+            if (percentage >= 100) {
+                progressFill.classList.add('danger');
+            } else if (percentage >= 80) {
+                progressFill.classList.add('warning');
+            }
+            
+            // Calculate daily average (last 30 days)
+            const thirtyDaysAgo = new Date();
+            thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+            const recentExpenses = expenses.filter(exp => new Date(exp.date) >= thirtyDaysAgo);
+            const dailyAvg = recentExpenses.length > 0 ? recentExpenses.reduce((sum, exp) => sum + exp.amount, 0) / 30 : 0;
+            document.getElementById('dailyAvg').innerHTML = `₹${dailyAvg.toFixed(0)}`;
+            
+            // Update expense list
+            updateExpenseList();
+            
+            // Check and show alerts
+            checkBudgetAlerts(percentage, remaining);
+        }
+        
+        function checkBudgetAlerts(percentage, remaining) {
+            const alertContainer = document.getElementById('alertContainer');
+            
+            if (percentage >= 100) {
+                showAlert('🚨 STOP! You have exceeded your budget! No more spending allowed!', 'danger');
+            } else if (percentage >= 95) {
+                showAlert('⚠️ CRITICAL! Only 5% of budget remaining!', 'danger');
+            } else if (percentage >= 90) {
+                showAlert('⚠️ WARNING! Only 10% of budget remaining!', 'warning');
+            } else if (percentage >= 80) {
+                showAlert('📢 Heads up! You\'ve used 80% of your budget', 'warning');
+            } else {
+                // Clear alerts if no threshold
+                if (!alertContainer.innerHTML.includes('STOP') && percentage < 80) {
+                    // Keep only non-critical alerts
+                }
+            }
+        }
+        
+        function showAlert(message, type) {
+            const alertContainer = document.getElementById('alertContainer');
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type}`;
+            alertDiv.innerHTML = message;
+            alertContainer.innerHTML = '';
+            alertContainer.appendChild(alertDiv);
+            
+            setTimeout(() => {
+                if (alertDiv.parentNode) {
+                    alertDiv.remove();
+                }
+            }, 4000);
+        }
+        
+        function updateExpenseList() {
+            const expenseList = document.getElementById('expenseList');
+            
+            if (expenses.length === 0) {
+                expenseList.innerHTML = '<div style="text-align: center; color: #a0aec0; padding: 20px;">No expenses yet. Add your first expense!</div>';
+                return;
+            }
+            
+            // Sort by date (newest first)
+            const sortedExpenses = [...expenses].sort((a, b) => new Date(b.date) - new Date(a.date));
+            
+            expenseList.innerHTML = sortedExpenses.map(exp => `
+                <div class="expense-item" data-id="${exp.id}">
+                    <div class="expense-details">
+                        <div class="expense-name">${escapeHtml(exp.name)}</div>
+                        <div class="expense-date">${formatDate(exp.date)}</div>
+                    </div>
+                    <div class="expense-amount">₹${exp.amount.toLocaleString()}</div>
+                    <button class="delete-expense" onclick="deleteExpense('${exp.id}')">🗑️</button>
+                </div>
+            `).join('');
+        }
+        
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            const now = new Date();
+            const diffTime = Math.abs(now - date);
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            
+            if (diffDays === 0) return 'Today';
+            if (diffDays === 1) return 'Yesterday';
+            if (diffDays < 7) return `${diffDays} days ago`;
+            return date.toLocaleDateString();
+        }
+        
+        function addExpense() {
+            const nameInput = document.getElementById('expenseName');
+            const amountInput = document.getElementById('expenseAmount');
+            
+            const name = nameInput.value.trim();
+            const amount = parseFloat(amountInput.value);
+            
+            if (!name) {
+                showAlert('Please enter an expense name', 'warning');
+                return;
+            }
+            
+            if (isNaN(amount) || amount <= 0) {
+                showAlert('Please enter a valid amount', 'warning');
+                return;
+            }
+            
+            const totalSpent = getTotalSpent();
+            const remaining = getRemaining();
+            
+            if (amount > remaining && remaining > 0) {
+                if (!confirm(`This expense (₹${amount}) will exceed your budget by ₹${amount - remaining}. Continue anyway?`)) {
+                    return;
+                }
+            }
+            
+            const newExpense = {
+                id: Date.now().toString(),
+                name: name,
+                amount: amount,
+                date: new Date().toISOString()
+            };
+            
+            expenses.push(newExpense);
+            saveData();
+            updateUI();
+            
+            // Play success sound/animation
+            showAlert(`✅ Added: ${name} for ₹${amount}`, 'success');
+            
+            // Clear inputs
+            nameInput.value = '';
+            amountInput.value = '';
+            
+            // Focus back on name input
+            nameInput.focus();
+        }
+        
+        function deleteExpense(id) {
+            const expense = expenses.find(e => e.id === id);
+            if (expense) {
+                expenses = expenses.filter(e => e.id !== id);
+                saveData();
+                updateUI();
+                showAlert(`🗑️ Deleted: ${expense.name} for ₹${expense.amount}`, 'success');
+                
+                // Play crumple sound effect
+                playCrumpleSound();
+            }
+        }
+        
+        function updateBudget() {
+            const newBudget = parseFloat(document.getElementById('budgetInput').value);
+            
+            if (isNaN(newBudget) || newBudget <= 0) {
+                showAlert('Please enter a valid budget amount', 'warning');
+                return;
+            }
+            
+            monthlyBudget = newBudget;
+            saveData();
+            updateUI();
+            showAlert(`💰 Budget updated to ₹${monthlyBudget.toLocaleString()}`, 'success');
+        }
+        
+        function resetAll() {
+            if (confirm('⚠️ Are you sure? This will delete ALL expenses and reset your budget!')) {
+                monthlyBudget = 50000;
+                expenses = [];
+                document.getElementById('budgetInput').value = 50000;
+                saveData();
+                updateUI();
+                showAlert('🔄 All data has been reset!', 'success');
+            }
+        }
+        
+        function playCrumpleSound() {
+            try {
+                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioCtx.createOscillator();
+                const gainNode = audioCtx.createGain();
+                oscillator.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+                oscillator.frequency.value = 200;
+                oscillator.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.3);
+                gainNode.gain.value = 0.2;
+                oscillator.start();
+                gainNode.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + 0.5);
+                oscillator.stop(audioCtx.currentTime + 0.5);
+            } catch(e) {
+                console.log('Audio not supported');
+            }
+        }
+        
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/[&<>]/g, function(m) {
+                if (m === '&') return '&amp;';
+                if (m === '<') return '&lt;';
+                if (m === '>') return '&gt;';
+                return m;
+            });
+        }
+        
+        // Initialize
+        loadData();
+        
+        // Auto-save on page close
+        window.addEventListener('beforeunload', () => {
+            saveData();
+        });
+    </script>
+</body>
+</html>
