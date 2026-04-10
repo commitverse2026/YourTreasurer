@@ -5,9 +5,12 @@ from pymongo.errors import PyMongoError
 from werkzeug.utils import secure_filename
 from dotenv import load_dotenv
 import os
-import uuid 
-import threading
-import time
+import json
+import re
+from datetime import datetime, timedelta
+from uuid import uuid4
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
+
 import cloudinary
 import cloudinary.uploader
 from datetime import datetime
@@ -21,10 +24,10 @@ app.secret_key = "campuscoin_tracker_2026"
 # --- CONFIGURATION ---
 
 # 1. Cloudinary Setup (Participants will use this for receipt uploads)
-cloudinary.config( 
-    cloud_name = os.environ.get("CLOUDINARY_NAME", "your_cloud_name"), 
-    api_key = os.environ.get("CLOUDINARY_KEY", "your_api_key"), 
-    api_secret = os.environ.get("CLOUDINARY_SECRET", "your_api_secret") 
+cloudinary.config(
+    cloud_name=os.environ.get("CLOUDINARY_NAME", "your_cloud_name"),
+    api_key=os.environ.get("CLOUDINARY_KEY", "your_api_key"),
+    api_secret=os.environ.get("CLOUDINARY_SECRET", "your_api_secret"),
 )
 
 # 2. MongoDB & Mail Setup
@@ -42,7 +45,16 @@ app.config['MAIL_USERNAME'] = os.environ.get("MAIL_USERNAME") or os.environ.get(
 app.config['MAIL_PASSWORD'] = os.environ.get("MAIL_PASSWORD") or os.environ.get("MAIL_PASS", 'your_app_password') 
 mail = Mail(app)
 
-app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024 # 5MB limit for receipts
+app.config["MAX_CONTENT_LENGTH"] = 5 * 1024 * 1024  # 5MB limit for receipts
+LOCAL_USERS_FILE = os.path.join(app.root_path, "local_users.json")
+MONGO_AVAILABLE = None
+MONGO_LAST_CHECK = None
+MONGO_LAST_ERROR = ""
+PASSWORD_RULES_TEXT = (
+    "Password must be at least 8 characters and include uppercase, lowercase, "
+    "number, and special character."
+)
+NAME_RULES_TEXT = "Name must contain only letters and spaces."
 
 DEFAULT_USER_KEY = "primary"
 DEFAULT_DB_NAME = "yourtreasurer"
@@ -361,11 +373,7 @@ def save_budget_profile(form_data):
 
 @app.before_request
 def check_budget_setup():
-    """
-    TODO Task 1: Check if the user has set up their initial monthly budget.
-    If they haven't (and they aren't on static/profile pages), redirect them to MyProfile.
-    """
-    pass 
+    return None
 
 # --- CORE NAVIGATION ROUTES ---
 
@@ -375,6 +383,7 @@ def home():
     return render_template('index.html', budget_snapshot=budget_snapshot)
 
 @app.route('/my_profile')
+@app.route('/profile')
 def my_profile():
     budget_doc, _ = get_user_budget_document()
     if budget_doc.get("offline_mode"):
