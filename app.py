@@ -254,6 +254,44 @@ def increment_current_spend(amount):
             return
 
 
+def normalize_expense_doc(expense_doc):
+    normalized = dict(expense_doc)
+    if "_id" in normalized:
+        normalized["_id"] = str(normalized["_id"])
+    created_at = normalized.get("created_at")
+    if isinstance(created_at, datetime):
+        normalized["created_at"] = created_at.isoformat()
+    elif created_at is not None:
+        normalized["created_at"] = str(created_at)
+    return normalized
+
+
+def get_expense_history_for_user(user_name, limit=100):
+    if not user_name:
+        return [], "local"
+
+    if is_mongo_available():
+        try:
+            cursor = (
+                daily_expenses_collection()
+                .find({"$or": [{"created_by": user_name}, {"username": user_name}]})
+                .sort("created_at", -1)
+                .limit(limit)
+            )
+            mongo_expenses = [normalize_expense_doc(exp) for exp in cursor]
+            return mongo_expenses, "atlas"
+        except PyMongoError:
+            pass
+
+    local_expenses = load_local_expenses()
+    filtered = [
+        exp for exp in local_expenses
+        if exp.get("username") == user_name or exp.get("created_by") == user_name
+    ]
+    filtered.sort(key=lambda x: x.get("created_at", ""), reverse=True)
+    return [normalize_expense_doc(exp) for exp in filtered[:limit]], "local"
+
+
 def parse_start_date(raw_start_date):
     if isinstance(raw_start_date, datetime):
         return raw_start_date
@@ -487,76 +525,14 @@ def logout():
 def my_expenses():
     if not session.get("user_id"):
         return redirect(url_for('home'))
+    return render_template('expenses.html')
 
-    user_name = session.get("user_name")
-    expenses = []
 
-    if is_mongo_available():
-        try:
-            expenses = list(daily_expenses_collection().find({"$or": [{"created_by": user_name}, {"username": user_name}]}).sort("created_at", -1))
-            if len(expenses) < 8:
-                dummy_templates = [
-                    {"category": "Junk Food", "amount": 150.0, "spent_at": "Local Cafe", "is_loan": False, "friend_email": None, "relationship": None},
-                    {"category": "Educational", "amount": 500.0, "spent_at": "Bookstore", "is_loan": False, "friend_email": None, "relationship": None},
-                    {"category": "Healthy Food", "amount": 200.0, "spent_at": "Grocery Store", "is_loan": False, "friend_email": None, "relationship": None},
-                    {"category": "Travelling", "amount": 300.0, "spent_at": "Bus Station", "is_loan": False, "friend_email": None, "relationship": None},
-                    {"category": "Lifestyle", "amount": 250.0, "spent_at": "Clothing Shop", "is_loan": True, "friend_email": "friend@example.com", "relationship": "Classmate"},
-                    {"category": "Hostel Rent", "amount": 2000.0, "spent_at": "Hostel Office", "is_loan": False, "friend_email": None, "relationship": None},
-                    {"category": "Junk Food", "amount": 100.0, "spent_at": "Fast Food Joint", "is_loan": False, "friend_email": None, "relationship": None},
-                    {"category": "Other", "amount": 50.0, "spent_at": "Miscellaneous", "is_loan": False, "friend_email": None, "relationship": None},
-                ]
-                missing = 8 - len(expenses)
-                if missing > 0:
-                    dummy_expenses = []
-                    for idx, template in enumerate(dummy_templates[:missing]):
-                        dummy_expenses.append(
-                            {
-                                **template,
-                                "created_at": datetime.utcnow() - timedelta(days=idx + 1),
-                                "created_by": user_name,
-                                "username": user_name,
-                            }
-                        )
-                    daily_expenses_collection().insert_many(dummy_expenses)
-                    expenses = list(daily_expenses_collection().find({"$or": [{"created_by": user_name}, {"username": user_name}]}).sort("created_at", -1))
-            for exp in expenses:
-                exp["_id"] = str(exp["_id"])
-                exp["created_at"] = exp["created_at"].isoformat() if isinstance(exp["created_at"], datetime) else exp["created_at"]
-        except PyMongoError:
-            expenses = []
-    else:
-        # Fallback to local
-        local_expenses = load_local_expenses()
-        expenses = [exp for exp in local_expenses if exp.get("username") == user_name or exp.get("created_by") == user_name]
-        if len(expenses) < 8:
-            dummy_templates = [
-                {"category": "Junk Food", "amount": 150.0, "spent_at": "Local Cafe", "is_loan": False, "friend_email": None, "relationship": None},
-                {"category": "Educational", "amount": 500.0, "spent_at": "Bookstore", "is_loan": False, "friend_email": None, "relationship": None},
-                {"category": "Healthy Food", "amount": 200.0, "spent_at": "Grocery Store", "is_loan": False, "friend_email": None, "relationship": None},
-                {"category": "Travelling", "amount": 300.0, "spent_at": "Bus Station", "is_loan": False, "friend_email": None, "relationship": None},
-                {"category": "Lifestyle", "amount": 250.0, "spent_at": "Clothing Shop", "is_loan": True, "friend_email": "friend@example.com", "relationship": "Classmate"},
-                {"category": "Hostel Rent", "amount": 2000.0, "spent_at": "Hostel Office", "is_loan": False, "friend_email": None, "relationship": None},
-                {"category": "Junk Food", "amount": 100.0, "spent_at": "Fast Food Joint", "is_loan": False, "friend_email": None, "relationship": None},
-                {"category": "Other", "amount": 50.0, "spent_at": "Miscellaneous", "is_loan": False, "friend_email": None, "relationship": None},
-            ]
-            missing = 8 - len(expenses)
-            dummy_expenses = []
-            for idx, template in enumerate(dummy_templates[:missing]):
-                dummy_expenses.append(
-                    {
-                        "_id": str(uuid4()),
-                        **template,
-                        "created_at": (datetime.utcnow() - timedelta(days=idx + 1)).isoformat(),
-                        "created_by": user_name,
-                        "username": user_name,
-                    }
-                )
-            local_expenses.extend(dummy_expenses)
-            save_local_expenses(local_expenses)
-            expenses = [exp for exp in local_expenses if exp.get("username") == user_name or exp.get("created_by") == user_name]
-        expenses.sort(key=lambda x: x.get("created_at", ""), reverse=True)
-
-    return render_template('expenses.html', expenses=expenses)
+@app.route('/expense_history')
+def expense_history_page():
+    if not session.get("user_id"):
+        return redirect(url_for('home'))
+    return render_template('expense_history.html')
 
 @app.route('/analysis')
 def analysis():
@@ -685,6 +661,23 @@ def spend_data():
         "amounts": [1200, 500, 800, 300, 5000, 450]
     }
     return jsonify(dummy_data)
+
+
+@app.route("/api/expense_history")
+def expense_history():
+    if not session.get("user_id"):
+        return jsonify({"success": False, "message": "Not logged in."}), 401
+
+    user_name = session.get("user_name")
+    expenses, storage = get_expense_history_for_user(user_name, limit=100)
+    return jsonify(
+        {
+            "success": True,
+            "storage": storage,
+            "count": len(expenses),
+            "expenses": expenses,
+        }
+    )
 
 
 @app.route("/api/db_status")

@@ -1,0 +1,254 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Expense History | YourTreasurer</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        body, html {
+            overflow-x: hidden;
+            overflow-y: auto;
+            height: auto;
+            min-height: 100%;
+        }
+        .main-layout-wrapper {
+            display: block;
+            padding: 100px 20px 170px;
+            min-height: calc(100vh - 70px);
+            width: min(100%, 980px);
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+        .scroll-tail {
+            height: 130px;
+            margin-top: 14px;
+            border-radius: 18px;
+            background: rgba(255, 255, 255, 0.82);
+        }
+        .panel {
+            border-radius: 24px;
+            background: rgba(255, 255, 255, 0.94);
+            box-shadow: 0 20px 48px rgba(15, 40, 84, 0.14);
+            padding: 28px;
+            backdrop-filter: blur(10px);
+        }
+        .header-row {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+        .title { margin: 0; color: var(--navy-dark); font-size: clamp(1.7rem, 3vw, 2.2rem); }
+        .sub { color: var(--blue-mid); margin: 0 0 16px 0; }
+        .live-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 10px;
+            border-radius: 999px;
+            background: rgba(17, 94, 46, 0.1);
+            color: #115e2e;
+            font-size: 0.82rem;
+            font-weight: 700;
+        }
+        .dot {
+            width: 8px; height: 8px; border-radius: 50%; background: #22c55e;
+            animation: pulse 1.2s infinite ease-in-out;
+        }
+        @keyframes pulse { 0%, 100% { transform: scale(0.8); opacity: .7; } 50% { transform: scale(1.2); opacity: 1; } }
+        .toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+        .btn {
+            border: none;
+            border-radius: 12px;
+            padding: 11px 16px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, var(--navy-dark), var(--blue-mid));
+            color: #fff;
+        }
+        .btn-secondary {
+            border: 1px solid rgba(26, 83, 168, 0.25);
+            background: #fff;
+            color: var(--navy-dark);
+        }
+        .meta { color: var(--blue-mid); font-size: 0.92rem; min-height: 1.3em; }
+        .status { color: var(--blue-mid); font-size: 0.92rem; margin-top: 8px; min-height: 1.3em; }
+        .status.error { color: #9f1d1d; }
+
+        .history-list {
+            margin-top: 14px;
+            display: grid;
+            gap: 10px;
+            max-height: calc(100vh - 330px);
+            overflow-y: scroll;
+            scrollbar-gutter: stable;
+            padding-right: 6px;
+        }
+        .history-list::-webkit-scrollbar { width: 8px; }
+        .history-list::-webkit-scrollbar-thumb {
+            background: rgba(28, 77, 141, 0.35);
+            border-radius: 999px;
+        }
+        .history-list::-webkit-scrollbar-track {
+            background: rgba(28, 77, 141, 0.08);
+            border-radius: 999px;
+        }
+        .expense-card {
+            border: 1px solid rgba(15, 40, 84, 0.12);
+            border-radius: 16px;
+            padding: 14px 16px;
+            background: #fff;
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 10px;
+            box-shadow: 0 10px 26px rgba(15, 40, 84, 0.08);
+            opacity: 0;
+            transform: translateY(18px);
+            animation: slideInFromBottom 0.52s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        }
+        .expense-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 16px 32px rgba(15, 40, 84, 0.12);
+        }
+        @keyframes slideInFromBottom {
+            from { opacity: 0; transform: translateY(22px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .history-title { font-weight: 700; color: var(--navy-dark); }
+        .history-sub { color: #5f6d88; font-size: 0.9rem; margin-top: 4px; }
+        .history-amt { font-weight: 800; color: var(--navy-dark); }
+        .loan-badge {
+            display: inline-block; margin-left: 8px; padding: 2px 8px;
+            border-radius: 999px; background: #ff6b6b; color: #fff; font-size: 0.74rem; font-weight: 700;
+        }
+        @media (max-width: 768px) {
+            .main-layout-wrapper { padding: 92px 14px 110px; }
+            .history-list { max-height: calc(100vh - 300px); }
+        }
+    </style>
+</head>
+<body>
+    <div class="brand-logo-top"><a href="/"><img src="{{ url_for('static', filename='images/logo.png') }}" alt="Logo"></a></div>
+    <button class="menu-trigger" id="menu-btn"><span>Menu</span></button>
+    <div class="menu-backdrop" id="menu-backdrop"></div>
+
+    <nav id="side-nav" class="side-nav">
+        <button class="close-btn" id="close-btn">&times;</button>
+        <div class="nav-links">
+            <a href="/">Home</a>
+            <a href="/my_profile">My Profile</a>
+            <a href="/my_expenses">My Expenses</a>
+            <a href="/expense_history" class="active">Expense History</a>
+            <a href="/analysis">Analysis</a>
+            <a href="/interval_spend">Interval Spend</a>
+            <a href="/about_us">About Us</a>
+        </div>
+    </nav>
+
+    <div class="dynamic-bg" style="background-image: url('{{ url_for('static', filename='images/expenses.avif') }}');"></div>
+
+    <div class="main-layout-wrapper">
+        <section class="panel">
+            <div class="header-row">
+                <h1 class="title">Real-Time Expense History</h1>
+                <span class="live-badge"><span class="dot"></span> LIVE</span>
+            </div>
+            <p class="sub">History refreshes every 30 seconds. You can also refresh manually.</p>
+
+            <div class="toolbar">
+                <button id="refresh-btn" class="btn btn-primary" type="button">Refresh Now</button>
+                <button id="back-btn" class="btn btn-secondary" type="button">Back to Entry</button>
+            </div>
+
+            <div id="meta" class="meta">Loading...</div>
+            <div id="status" class="status"></div>
+            <div id="history-list" class="history-list"></div>
+        </section>
+        <div class="scroll-tail" aria-hidden="true"></div>
+    </div>
+
+    <footer class="common-footer">YourTreasurer &copy; 2026 | Helping Hand</footer>
+
+    <script>
+        const menuBtn = document.getElementById('menu-btn');
+        const closeBtn = document.getElementById('close-btn');
+        const sideNav = document.getElementById('side-nav');
+        const backdrop = document.getElementById('menu-backdrop');
+        const refreshBtn = document.getElementById('refresh-btn');
+        const backBtn = document.getElementById('back-btn');
+        const metaNode = document.getElementById('meta');
+        const statusNode = document.getElementById('status');
+        const listNode = document.getElementById('history-list');
+
+        function toggleMenu() {
+            sideNav.classList.toggle('open');
+            backdrop.classList.toggle('active');
+        }
+
+        function renderHistory(expenses) {
+            listNode.innerHTML = '';
+            if (!expenses || !expenses.length) {
+                listNode.innerHTML = '<div class="expense-card"><div class="history-title">No expenses yet</div><div class="history-sub">Add expenses from My Expenses page and refresh.</div></div>';
+                return;
+            }
+            expenses.forEach((item, idx) => {
+                const row = document.createElement('div');
+                row.className = 'expense-card';
+                row.style.animationDelay = `${Math.min(idx * 0.08, 0.56)}s`;
+                const createdAt = item.created_at ? String(item.created_at).replace('T', ' ').slice(0, 16) : 'N/A';
+                const loanBadge = item.is_loan ? '<span class="loan-badge">Loan</span>' : '';
+                row.innerHTML = `
+                    <div>
+                        <div class="history-title">${item.category || 'Other'} ${loanBadge}</div>
+                        <div class="history-sub">${item.spent_at || 'N/A'} | ${createdAt}</div>
+                    </div>
+                    <div class="history-amt">₹${Number(item.amount || 0).toFixed(2)}</div>
+                `;
+                listNode.appendChild(row);
+            });
+        }
+
+        async function fetchHistory() {
+            statusNode.className = 'status';
+            statusNode.textContent = 'Fetching latest records...';
+            try {
+                const response = await fetch('/api/expense_history');
+                const data = await response.json();
+                if (!response.ok || !data.success) {
+                    statusNode.className = 'status error';
+                    statusNode.textContent = data.message || 'Failed to load history.';
+                    return;
+                }
+                metaNode.textContent = `Showing ${data.count} record(s). Source: ${data.storage}. Auto-refresh: 30s`;
+                renderHistory(data.expenses || []);
+                statusNode.textContent = `Updated at ${new Date().toLocaleTimeString()}`;
+            } catch (error) {
+                statusNode.className = 'status error';
+                statusNode.textContent = 'Network error while loading history.';
+            }
+        }
+
+        menuBtn.addEventListener('click', toggleMenu);
+        closeBtn.addEventListener('click', toggleMenu);
+        backdrop.addEventListener('click', toggleMenu);
+        refreshBtn.addEventListener('click', fetchHistory);
+        backBtn.addEventListener('click', () => window.location.href = '/my_expenses');
+
+        fetchHistory();
+        setInterval(fetchHistory, 30000);
+    </script>
+</body>
+</html>
+

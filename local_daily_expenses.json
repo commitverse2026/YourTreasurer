@@ -58,5 +58,17 @@
     "created_at": "2026-04-10T07:22:03.918386",
     "created_by": "guest",
     "_id": "ec346a90-50a0-4a93-96dc-316e13a59693"
+  },
+  {
+    "category": "Junk Food",
+    "amount": 100.0,
+    "spent_at": "Cafe",
+    "is_loan": false,
+    "friend_email": null,
+    "relationship": null,
+    "created_at": "2026-04-10T08:48:52.247950",
+    "created_by": "History User",
+    "username": "History User",
+    "_id": "343c3274-19ba-4173-ba3b-870dee13b501"
   }
 ]

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -10,310 +10,78 @@
         body, html {
             overflow-x: hidden;
             overflow-y: auto;
+            height: auto;
+            min-height: 100%;
+        }
+        .main-layout-wrapper {
+            display: block;
+            padding: 100px 20px 170px;
+            min-height: calc(100vh - 70px);
+            position: relative;
+            z-index: 1;
+            width: min(100%, 860px);
+            margin: 0 auto;
+        }
+        .scroll-tail {
+            height: 130px;
+            margin-top: 14px;
+            border-radius: 18px;
+            background: rgba(255, 255, 255, 0.82);
         }
         .card {
             width: 100%;
             margin: 0;
-            padding: 34px 32px;
-            border-radius: 28px;
-            background: rgba(255, 255, 255, 0.96);
-            box-shadow: 0 30px 80px rgba(15, 40, 84, 0.14);
+            padding: 32px 30px;
+            border-radius: 24px;
+            background: rgba(255, 255, 255, 0.95);
+            box-shadow: 0 20px 48px rgba(15, 40, 84, 0.14);
             text-align: left;
-            backdrop-filter: blur(16px);
-            border: 1px solid rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(10px);
         }
-        .card h1 {
-            color: var(--navy-dark);
-            margin-bottom: 8px;
-            font-size: clamp(2rem, 3vw, 2.4rem);
+        .card h1 { color: var(--navy-dark); margin-bottom: 8px; font-size: clamp(1.8rem, 3vw, 2.3rem); }
+        .card p { color: var(--blue-mid); margin-bottom: 22px; }
+        .form-grid { display: grid; gap: 14px; }
+        .form-grid label { font-weight: 600; color: var(--navy-dark); display: block; margin-bottom: 6px; }
+        .form-grid input, .form-grid select {
+            width: 100%; border: 1px solid rgba(26, 83, 168, 0.18); border-radius: 14px;
+            padding: 12px 14px; font-size: 0.98rem; font-family: inherit; background: #f9fbff;
         }
-        .card p {
-            color: var(--blue-mid);
-            margin-bottom: 24px;
-            line-height: 1.65;
-        }
-        .form-grid {
-            display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 16px;
-        }
-        .form-grid label {
-            font-weight: 600;
-            color: var(--navy-dark);
-            display: block;
-            margin-bottom: 8px;
-        }
-        .form-grid input,
-        .form-grid select {
-            width: 100%;
-            border: 1px solid rgba(26, 83, 168, 0.18);
-            border-radius: 16px;
-            padding: 14px 16px;
-            font-size: 0.98rem;
-            font-family: inherit;
-            background: #f9fbff;
-            color: var(--navy-dark);
-            box-shadow: inset 0 1px 2px rgba(63, 107, 184, 0.07);
-            transition: border-color 0.25s ease, transform 0.25s ease;
-        }
-        .form-grid input:focus,
-        .form-grid select:focus {
-            outline: none;
-            border-color: var(--blue-mid);
-            transform: translateY(-1px);
-        }
-        .checkbox-row {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin: 6px 0 0;
-            grid-column: span 2;
-        }
-        .checkbox-row input {
-            width: 18px;
-            height: 18px;
-        }
+        .checkbox-row { display: flex; align-items: center; gap: 10px; margin: 6px 0 0; }
+        .checkbox-row input { width: 18px; height: 18px; }
         .loan-fields {
-            display: none;
-            gap: 14px;
-            border: 1px dashed rgba(26, 83, 168, 0.25);
-            background: rgba(73, 136, 196, 0.08);
-            padding: 16px;
-            border-radius: 16px;
-            grid-column: span 2;
+            display: none; gap: 12px; border: 1px dashed rgba(26, 83, 168, 0.25);
+            background: rgba(73, 136, 196, 0.08); padding: 14px; border-radius: 14px;
         }
-        .loan-fields.visible {
-            display: grid;
-        }
-        .actions {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 12px;
-            align-items: center;
-            grid-column: span 2;
-        }
+        .loan-fields.visible { display: grid; }
+        .actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
         .btn-primary {
-            border: none;
-            border-radius: 14px;
-            padding: 14px 24px;
+            border: none; border-radius: 12px; padding: 12px 18px;
             background: linear-gradient(135deg, var(--navy-dark), var(--blue-mid));
-            color: #fff;
-            font-weight: 700;
-            cursor: pointer;
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-            box-shadow: 0 16px 33px rgba(15, 40, 84, 0.18);
+            color: #fff; font-weight: 700; cursor: pointer;
         }
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 22px 44px rgba(15, 40, 84, 0.22);
+        .btn-secondary {
+            border: 1px solid rgba(26, 83, 168, 0.25); border-radius: 12px; padding: 12px 18px;
+            background: #fff; color: var(--navy-dark); font-weight: 700; cursor: pointer;
         }
-        .status {
-            min-height: 1.4em;
-            font-size: 0.95rem;
-            color: var(--blue-mid);
-            grid-column: span 2;
-        }
+        .status { min-height: 1.3em; font-size: 0.95rem; color: var(--blue-mid); }
         .status.error { color: #9f1d1d; }
         .status.success { color: #115e2e; }
 
-        .main-layout-wrapper {
-            display: grid;
-            grid-template-columns: minmax(320px, 450px) minmax(420px, 1fr);
-            gap: 32px;
-            align-items: start;
-            padding: 100px 20px 80px;
-            min-height: 100vh;
-            position: relative;
-            z-index: 1;
-            width: min(100%, 1180px);
-            margin: 0 auto;
-        }
-        .entry-panel,
-        .history-panel {
-            width: 100%;
-        }
-        .expense-history {
-            width: 100%;
-            margin-top: 0;
-        }
-
-        .coin-rain {
-            position: fixed;
-            inset: 0;
-            pointer-events: none;
-            overflow: hidden;
-            z-index: 2000;
-        }
+        .coin-rain { position: fixed; inset: 0; pointer-events: none; overflow: hidden; z-index: 2000; }
         .coin {
-            position: absolute;
-            top: -40px;
-            width: 24px;
-            height: 24px;
-            border-radius: 50%;
+            position: absolute; top: -40px; width: 24px; height: 24px; border-radius: 50%;
             background: radial-gradient(circle at 30% 30%, #fff2ab 0%, #ffcd3c 45%, #d59a0d 100%);
-            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
-            display: grid;
-            place-items: center;
-            color: #8a5b00;
-            font-weight: 800;
-            animation: fall linear forwards;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2); display: grid; place-items: center;
+            color: #8a5b00; font-weight: 800; animation: fall linear forwards;
         }
-        .expense-history {
-            width: 100%;
-            margin-top: 0;
-        }
-        .history-info {
-            display: flex;
-            flex-wrap: wrap;
-            align-items: flex-start;
-            justify-content: space-between;
-            gap: 16px;
-            margin-bottom: 20px;
-            padding: 20px 24px;
-            border-radius: 22px;
-            background: rgba(255, 255, 255, 0.85);
-            border: 1px solid rgba(255, 255, 255, 0.75);
-            box-shadow: 0 12px 30px rgba(15, 40, 84, 0.08);
-        }
-        .history-info h2 {
-            margin: 0;
-            color: var(--navy-dark);
-            font-size: clamp(1.6rem, 2vw, 2rem);
-        }
-        .history-meta {
-            color: var(--blue-mid);
-            font-size: 0.95rem;
-            max-width: 480px;
-        }
-        .expense-card {
-            width: 100%;
-            margin: 16px auto;
-            padding: 24px 26px;
-            border-radius: 24px;
-            background: linear-gradient(180deg, rgba(255,255,255,0.99), rgba(245,250,255,0.92));
-            border: 1px solid rgba(20, 56, 110, 0.06);
-            box-shadow: 0 20px 45px rgba(15, 40, 84, 0.08);
-            display: grid;
-            grid-template-columns: 1fr auto;
-            gap: 22px;
-            animation: slideInFromBottom 0.6s ease-out forwards;
-            opacity: 0;
-            transform: translateY(30px);
-        }
-        .expense-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 25px 55px rgba(15, 40, 84, 0.12);
-        }
-        .expense-card:nth-child(1) { animation-delay: 0.1s; }
-        .expense-card:nth-child(2) { animation-delay: 0.16s; }
-        .expense-card:nth-child(3) { animation-delay: 0.22s; }
-        .expense-card:nth-child(4) { animation-delay: 0.28s; }
-        .expense-card:nth-child(5) { animation-delay: 0.34s; }
-        .expense-card:nth-child(6) { animation-delay: 0.4s; }
-        .expense-card:nth-child(7) { animation-delay: 0.46s; }
-        .expense-card:nth-child(8) { animation-delay: 0.52s; }
-        .expense-card:nth-child(n+9) { animation-delay: 0.58s; }
-        @keyframes slideInFromBottom {
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-        .expense-details {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-        .expense-category-row {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-        .expense-category {
-            font-weight: 700;
-            color: var(--navy-dark);
-            font-size: 1rem;
-        }
-        .expense-title {
-            font-size: 1.12rem;
-            color: #1c3f72;
-            font-weight: 600;
-        }
-        .expense-note,
-        .loan-detail {
-            font-size: 0.95rem;
-            color: #5f6d88;
-            line-height: 1.6;
-        }
-        .expense-meta {
-            text-align: right;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            gap: 12px;
-            min-width: 140px;
-        }
-        .expense-amount {
-            font-size: 1.6rem;
-            color: var(--navy-dark);
-            font-weight: 800;
-        }
-        .expense-date {
-            font-size: 0.95rem;
-            color: #6f7a99;
-        }
-        .expense-label {
-            display: inline-flex;
-            padding: 4px 10px;
-            border-radius: 999px;
-            background: rgba(26, 83, 168, 0.08);
-            color: var(--blue-mid);
-            font-size: 0.78rem;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-            font-weight: 700;
-        }
-        .loan-badge {
-            background: #ff6b6b;
-            color: white;
-            padding: 6px 12px;
-            border-radius: 14px;
-            font-size: 0.82rem;
-            font-weight: 700;
-        }
-        .history-empty {
-            text-align: center;
-            padding: 42px 24px;
-            border-radius: 24px;
-            background: rgba(255,255,255,0.88);
-            border: 1px solid rgba(20, 56, 110, 0.08);
-            box-shadow: 0 18px 45px rgba(15, 40, 84, 0.06);
-            color: var(--blue-mid);
-            font-size: 1rem;
-        }
-        @media (max-width: 1024px) {
-            .main-layout-wrapper {
-                grid-template-columns: 1fr;
-                padding: 100px 16px 80px;
-            }
-        }
-        @media (max-width: 760px) {
-            .form-grid { grid-template-columns: 1fr; }
-            .checkbox-row,
-            .loan-fields,
-            .actions,
-            .status { grid-column: span 1; }
-            .expense-card { grid-template-columns: 1fr; }
-            .expense-meta { text-align: left; }
+        @keyframes fall {
+            from { transform: translateY(-40px) rotate(0deg); opacity: 1; }
+            to { transform: translateY(110vh) rotate(540deg); opacity: 0.2; }
         }
     </style>
 </head>
 <body>
-    <div class="brand-logo-top">
-        <a href="/"><img src="{{ url_for('static', filename='images/logo.png') }}" alt="Logo"></a>
-    </div>
-
+    <div class="brand-logo-top"><a href="/"><img src="{{ url_for('static', filename='images/logo.png') }}" alt="Logo"></a></div>
     <button class="menu-trigger" id="menu-btn"><span>Menu</span></button>
     <div class="menu-backdrop" id="menu-backdrop"></div>
 
@@ -332,9 +100,9 @@
     <div class="dynamic-bg" style="background-image: url('{{ url_for('static', filename='images/expenses.avif') }}');"></div>
 
     <div class="main-layout-wrapper">
-        <section class="card entry-panel">
+        <section class="card">
             <h1>Daily Expense Entry</h1>
-            <p>Track your daily spending and optionally mark any spend as a loan to a friend.</p>
+            <p>Enter expense details, then click <strong>Get History (Real-Time)</strong> to open your live history page.</p>
 
             <form id="expense-form" class="form-grid">
                 <div>
@@ -353,7 +121,7 @@
 
                 <div>
                     <label for="spent_at">Where was it spent?</label>
-                    <input id="spent_at" name="spent_at" type="text" placeholder="e.g. Cafe, Online Store, Supermarket" required>
+                    <input id="spent_at" name="spent_at" type="text" placeholder="e.g. Cafe, Online Store" required>
                 </div>
 
                 <div>
@@ -379,42 +147,12 @@
 
                 <div class="actions">
                     <button class="btn-primary" type="submit">Save Expense</button>
+                    <button id="history-btn" class="btn-secondary" type="button">Get History (Real-Time)</button>
                 </div>
                 <div id="status" class="status"></div>
             </form>
         </section>
-
-        <section class="expense-history history-panel">
-            <div class="history-info">
-                <h2>Your Expense History</h2>
-                <div class="history-meta">Recent transactions, grouped by location and category for quick budgeting insight.</div>
-            </div>
-            {% if expenses %}
-                {% for expense in expenses %}
-                <div class="expense-card">
-                    <div class="expense-details">
-                        <div class="expense-category-row">
-                            <span class="expense-category">{{ expense.category }}</span>
-                            {% if expense.is_loan %}
-                                <span class="loan-badge">Loan</span>
-                            {% endif %}
-                        </div>
-                        <div class="expense-title">{{ expense.spent_at or 'Unspecified location' }}</div>
-                        <div class="expense-note"><span class="expense-label">Spent at</span> {{ expense.spent_at or 'N/A' }}</div>
-                        {% if expense.is_loan %}
-                        <div class="loan-detail"><span class="expense-label">Loan to</span> {{ expense.friend_email }} ({{ expense.relationship }})</div>
-                        {% endif %}
-                    </div>
-                    <div class="expense-meta">
-                        <div class="expense-amount">₹{{ "%.2f"|format(expense.amount) }}</div>
-                        <div class="expense-date">{{ expense.created_at[:10] if expense.created_at else 'N/A' }}</div>
-                    </div>
-                </div>
-                {% endfor %}
-            {% else %}
-                <div class="history-empty">No expenses recorded yet. Start tracking now to build a smarter budget.</div>
-            {% endif %}
-        </section>
+        <div class="scroll-tail" aria-hidden="true"></div>
     </div>
 
     <div id="coin-rain" class="coin-rain"></div>
@@ -428,6 +166,7 @@
         const backdrop = document.getElementById('menu-backdrop');
 
         const expenseForm = document.getElementById('expense-form');
+        const historyBtn = document.getElementById('history-btn');
         const loanToggle = document.getElementById('is_loan');
         const loanFields = document.getElementById('loan-fields');
         const friendEmail = document.getElementById('friend_email');
@@ -478,7 +217,7 @@
             for (let i = 0; i < 24; i += 1) {
                 const coin = document.createElement('div');
                 coin.className = 'coin';
-                coin.textContent = '$';
+                coin.textContent = '₹';
                 coin.style.left = `${Math.random() * 100}vw`;
                 coin.style.animationDuration = `${1.5 + Math.random() * 1.2}s`;
                 coin.style.animationDelay = `${Math.random() * 0.4}s`;
@@ -506,19 +245,16 @@
                 statusNode.textContent = 'Please select a category.';
                 return;
             }
-
             if (!payload.spent_at) {
                 statusNode.className = 'status error';
                 statusNode.textContent = 'Please specify where the money was spent.';
                 return;
             }
-
             if (!payload.amount || Number(payload.amount) <= 0) {
                 statusNode.className = 'status error';
                 statusNode.textContent = 'Amount must be greater than 0.';
                 return;
             }
-
             if (payload.is_loan && (!payload.friend_email || !payload.relationship)) {
                 statusNode.className = 'status error';
                 statusNode.textContent = 'Friend email and relationship are required for loans.';
@@ -531,10 +267,7 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
                 });
-                const raw = await response.text();
-                let data = {};
-                try { data = raw ? JSON.parse(raw) : {}; } catch (parseError) { data = {}; }
-
+                const data = await response.json();
                 if (!response.ok || !data.success) {
                     statusNode.className = 'status error';
                     statusNode.textContent = data.message || 'Failed to save expense.';
@@ -542,11 +275,9 @@
                 }
 
                 statusNode.className = 'status success';
-                const storage = data.storage || 'local';
-                statusNode.textContent = `${data.message || 'Expense saved successfully.'} (Saved to: ${storage})`;
+                statusNode.textContent = `${data.message || 'Expense saved successfully.'} (Saved to: ${data.storage || 'local'})`;
                 playCoinClink();
                 runMoneyDrop();
-
                 expenseForm.reset();
                 setLoanFieldVisibility();
             } catch (error) {
@@ -559,6 +290,9 @@
         closeBtn.addEventListener('click', toggleMenu);
         backdrop.addEventListener('click', toggleMenu);
         loanToggle.addEventListener('change', setLoanFieldVisibility);
+        historyBtn.addEventListener('click', () => {
+            window.location.href = '/expense_history';
+        });
     </script>
 </body>
 </html>
