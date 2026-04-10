@@ -56,10 +56,53 @@
     </div>
 
     <script>
-        document.getElementById('signup-btn').addEventListener('click', function() {
-            document.getElementById('monthly-limit-group').style.display = 'block';
-            document.getElementById('login-btn').textContent = 'Sign Up';
-            this.style.display = 'none';
+        document.addEventListener('DOMContentLoaded', function() {
+            const signupBtn = document.getElementById('signup-btn');
+            if (signupBtn) {
+                signupBtn.addEventListener('click', function() {
+                    document.getElementById('monthly-limit-group').style.display = 'block';
+                    document.getElementById('login-btn').textContent = 'Sign Up';
+                    this.style.display = 'none';
+                });
+            }
+
+            const form = document.querySelector('.profile-form form');
+            if (form) {
+                form.addEventListener('submit', function(e) {
+                    const name = document.getElementById('name').value.trim();
+                    const password = document.getElementById('password').value;
+                    const isSignUp = document.getElementById('login-btn').textContent === 'Sign Up';
+                    let errors = [];
+
+                    // Validation Rules
+                    if (name.length < 3) {
+                        errors.push('Name must be at least 3 characters long.');
+                    }
+                    if (password.length < 6) {
+                        errors.push('Password must be at least 6 characters long.');
+                    }
+                    if (isSignUp) {
+                        const limit = document.getElementById('monthly_limit').value;
+                        if (!limit || parseFloat(limit) <= 0) {
+                            errors.push('Please provide a valid monthly budget limit (greater than 0).');
+                        }
+                    }
+
+                    // Display errors and stop submission if validation fails
+                    if (errors.length > 0) {
+                        e.preventDefault();
+                        let errorDiv = document.getElementById('js-errors');
+                        if (!errorDiv) {
+                            errorDiv = document.createElement('div');
+                            errorDiv.id = 'js-errors';
+                            errorDiv.className = 'alert alert-error';
+                            errorDiv.style.marginBottom = '15px';
+                            form.insertBefore(errorDiv, form.firstChild);
+                        }
+                        errorDiv.innerHTML = errors.join('<br>');
+                    }
+                });
+            }
         });
     </script>
 </body>
