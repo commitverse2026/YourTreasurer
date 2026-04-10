@@ -9,7 +9,7 @@
 </head>
 <body>
     <div class="brand-logo-top">
-        <img src="{{ url_for('static', filename='images/logo.png') }}" alt="YourTreasurer Logo">
+        <img src="{{ url_for('static', filename='images/logo.png') }}" alt="YourTreasurer Logo" onerror="this.style.display='none'">
     </div>
 
     <button class="menu-trigger" id="menu-btn">
@@ -18,15 +18,16 @@
 
     <div class="menu-backdrop" id="menu-backdrop"></div>
 
-     <nav id="side-nav" class="side-nav">
+    <nav id="side-nav" class="side-nav">
         <button class="close-btn" id="close-btn">&times;</button>
         <div class="nav-links">
-            <a href="/" data-bg="{{ url_for('static', filename='images/bg.svg') }}">Home</a>
-            <a href="/my_profile" data-bg="{{ url_for('static', filename='images/profile.jpg') }}">My Profile</a>
-            <a href="/my_expenses" data-bg="{{ url_for('static', filename='images/expenses.avif') }}">My Expenses</a>
-            <a href="/analysis" data-bg="{{ url_for('static', filename='images/Analysis.jpg') }}">Analysis</a>
-            <a href="/interval_spend" data-bg="{{ url_for('static', filename='images/interval.jpg') }}">Interval Spend</a>
-            <a href="/about_us" data-bg="{{ url_for('static', filename='images/aboutus.png') }}">About Us</a>
+            <a href="/">Home</a>
+            <a href="/my_profile">My Profile</a>
+            <a href="/my_expenses">My Expenses</a>
+            <a href="/analysis">Analysis</a>
+            <a href="/interval_spend">Interval Spend</a>
+            <a href="/about_us">About Us</a>
+            <a href="/logout" style="opacity:0.4; font-size:1rem; margin-top:auto;">Logout</a>
         </div>
     </nav>
 
@@ -37,27 +38,24 @@
         <div class="content-container">
             <h1 class="title">YourTreasurer</h1>
             <p class="subtitle">Smart Spending for Smart Ones</p>
+            {% if session.username %}
+            <p class="subtitle" style="font-size:0.9rem; margin-top:6px; opacity:0.7;">Logged in as <strong>{{ session.username }}</strong></p>
+            {% endif %}
         </div>
     </div>
-    
+
     <footer class="common-footer">
         YourTreasurer &copy; 2026 | Helping Hand
     </footer>
 
-   
-<script>
+    <script>
         const menuBtn = document.getElementById('menu-btn');
         const closeBtn = document.getElementById('close-btn');
         const sideNav = document.getElementById('side-nav');
         const backdrop = document.getElementById('menu-backdrop');
-        
+
         const mainBg = document.getElementById('dynamic-bg');
         const hoverBg = document.getElementById('hover-bg');
-        const navLinks = document.querySelectorAll('.nav-links a');
-        
-        // Set default background
-        const defaultBg = "{{ url_for('static', filename='images/bg.svg') }}";
-        mainBg.style.backgroundImage = `url(${defaultBg})`;
 
         function toggleMenu() {
             sideNav.classList.toggle('open');
@@ -67,23 +65,9 @@
                 document.body.style.width = '100%';
             } else {
                 document.body.style.position = '';
-                // Reset bg when menu closes
                 hoverBg.style.opacity = '0';
             }
         }
-
-        // --- Hover Animation Logic ---
-        navLinks.forEach(link => {
-            link.addEventListener('mouseenter', () => {
-                const newImg = link.getAttribute('data-bg');
-                hoverBg.style.backgroundImage = `url(${newImg})`;
-                hoverBg.style.opacity = '1';
-            });
-
-            link.addEventListener('mouseleave', () => {
-                hoverBg.style.opacity = '0';
-            });
-        });
 
         menuBtn.addEventListener('click', toggleMenu);
         closeBtn.addEventListener('click', toggleMenu);

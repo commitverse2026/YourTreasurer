@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Budget Gateway | YourTreasurer</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        /* ---- Gateway Card ---- */
+        .gateway-wrapper {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 80px 20px 60px;
+        }
+
+        .gateway-card {
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(16px);
+            border-radius: 24px;
+            padding: 48px 44px;
+            width: 100%;
+            max-width: 460px;
+            box-shadow: 0 20px 60px rgba(15, 40, 84, 0.18);
+            animation: slideUp 0.6s cubic-bezier(0.77, 0, 0.175, 1) both;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(40px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        .gateway-icon {
+            font-size: 3rem;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        .gateway-title {
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--navy-dark);
+            text-align: center;
+            margin-bottom: 4px;
+            letter-spacing: -1px;
+        }
+
+        .gateway-sub {
+            text-align: center;
+            color: var(--blue-mid);
+            font-size: 0.9rem;
+            margin-bottom: 32px;
+        }
+
+        /* Flash messages */
+        .flash-messages {
+            margin-bottom: 20px;
+        }
+
+        .flash {
+            padding: 10px 16px;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .flash.success { background: #d4edda; color: #155724; }
+        .flash.error   { background: #f8d7da; color: #721c24; }
+        .flash.info    { background: #cce5ff; color: #004085; }
+
+        /* Form fields */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--navy-dark);
+            margin-bottom: 8px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 14px 18px;
+            border: 2px solid #e0eaf5;
+            border-radius: 12px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 1rem;
+            color: var(--navy-dark);
+            background: #f8fbff;
+            transition: border-color 0.25s, box-shadow 0.25s;
+            outline: none;
+        }
+
+        .form-input:focus {
+            border-color: var(--blue-soft);
+            box-shadow: 0 0 0 4px rgba(73, 136, 196, 0.15);
+            background: #fff;
+        }
+
+        /* Budget field — hidden until needed (JS toggles) */
+        .budget-group {
+            overflow: hidden;
+            max-height: 0;
+            opacity: 0;
+            transition: max-height 0.4s ease, opacity 0.4s ease;
+        }
+
+        .budget-group.visible {
+            max-height: 120px;
+            opacity: 1;
+        }
+
+        /* Submit button */
+        .btn-gateway {
+            width: 100%;
+            padding: 16px;
+            background: var(--navy-dark);
+            color: white;
+            border: none;
+            border-radius: 14px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 1.05rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
+            margin-top: 8px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-gateway:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(15, 40, 84, 0.3);
+            background: var(--blue-mid);
+        }
+
+        .btn-gateway:active {
+            transform: translateY(0);
+        }
+
+        /* Divider note */
+        .gateway-note {
+            text-align: center;
+            color: var(--blue-mid);
+            font-size: 0.78rem;
+            margin-top: 20px;
+            line-height: 1.6;
+        }
+
+        /* Logged-in view */
+        .already-in {
+            text-align: center;
+        }
+
+        .already-in .user-badge {
+            display: inline-block;
+            background: var(--navy-dark);
+            color: white;
+            padding: 8px 20px;
+            border-radius: 50px;
+            font-weight: 700;
+            font-size: 1rem;
+            margin-bottom: 20px;
+        }
+
+        .btn-outline {
+            display: inline-block;
+            padding: 12px 28px;
+            border: 2.5px solid var(--navy-dark);
+            border-radius: 12px;
+            color: var(--navy-dark);
+            font-family: 'Poppins', sans-serif;
+            font-weight: 700;
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: background 0.2s, color 0.2s;
+        }
+
+        .btn-outline:hover {
+            background: var(--navy-dark);
+            color: white;
+        }
+
+        .btn-logout {
+            display: inline-block;
+            margin-top: 12px;
+            font-size: 0.8rem;
+            color: #c0392b;
+            text-decoration: none;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="brand-logo-top">
+        <a href="/"><img src="{{ url_for('static', filename='images/logo.png') }}" alt="Logo" onerror="this.style.display='none'"></a>
+    </div>
+
+    <div class="dynamic-bg" style="background: linear-gradient(135deg, #BDE8F5 0%, #e8f4fd 100%);"></div>
+
+    <div class="gateway-wrapper">
+        <div class="gateway-card">
+
+            {% if user %}
+            <!-- ===== Already logged in ===== -->
+            <div class="already-in">
+                <div class="gateway-icon">🏛️</div>
+                <h1 class="gateway-title">Welcome Back</h1>
+                <p class="gateway-sub">You are already logged in.</p>
+
+                <div class="user-badge">⚓ {{ user.name }}</div>
+                <br>
+                <a href="{{ url_for('home') }}" class="btn-outline">Go to Dashboard →</a>
+                <br>
+                <a href="{{ url_for('logout') }}" class="btn-logout">Log out</a>
+            </div>
+
+            {% else %}
+            <!-- ===== Login / Register Form ===== -->
+            <div class="gateway-icon">🔐</div>
+            <h1 class="gateway-title">Budget Gateway</h1>
+            <p class="gateway-sub">Log in or create your account to continue</p>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+              {% if messages %}
+                <div class="flash-messages">
+                  {% for category, message in messages %}
+                    <div class="flash {{ category }}">{{ message }}</div>
+                  {% endfor %}
+                </div>
+              {% endif %}
+            {% endwith %}
+
+            <form action="{{ url_for('save_profile') }}" method="POST" id="gateway-form">
+
+                <div class="form-group">
+                    <label class="form-label" for="name">Name</label>
+                    <input class="form-input" type="text" id="name" name="name"
+                           placeholder="Your full name" required autocomplete="name">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="password">Password</label>
+                    <input class="form-input" type="password" id="password" name="password"
+                           placeholder="Your password" required autocomplete="current-password">
+                </div>
+
+                <!-- Shown only for new users -->
+                <div class="form-group budget-group" id="budget-group">
+                    <label class="form-label" for="monthly_limit">Monthly Budget (₹)</label>
+                    <input class="form-input" type="number" id="monthly_limit" name="monthly_limit"
+                           placeholder="e.g. 8000" min="1">
+                </div>
+
+                <button type="submit" class="btn-gateway" id="submit-btn">
+                    Unlock Dashboard →
+                </button>
+            </form>
+
+            <p class="gateway-note">
+                New here? Just enter your name, set a password &amp; monthly budget.<br>
+                Existing user? Your budget continues from where you left off.
+            </p>
+            {% endif %}
+
+        </div>
+    </div>
+
+    <footer class="common-footer">
+        YourTreasurer &copy; 2026 | Helping Hand
+    </footer>
+
+    <script>
+        // Show budget field if the name typed doesn't exist (simple UX hint)
+        // The backend handles real new/existing logic — this just improves UX
+        const nameInput  = document.getElementById('name');
+        const budgetGrp  = document.getElementById('budget-group');
+        const budgetInput = document.getElementById('monthly_limit');
+
+        if (nameInput) {
+            nameInput.addEventListener('blur', () => {
+                if (nameInput.value.trim().length > 1) {
+                    budgetGrp.classList.add('visible');
+                    budgetInput.required = true;
+                }
+            });
+
+            // Pre-show if there was a form error (page reloaded)
+            if (nameInput.value.trim().length > 1) {
+                budgetGrp.classList.add('visible');
+            }
+        }
+
+        // Play a subtle chime on successful form submit
+        // (the actual "Digital Unlock" chime — a simple Web Audio API tone)
+        const form = document.getElementById('gateway-form');
+        if (form) {
+            form.addEventListener('submit', () => {
+                try {
+                    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                    [523, 659, 784].forEach((freq, i) => {
+                        const osc = ctx.createOscillator();
+                        const gain = ctx.createGain();
+                        osc.connect(gain);
+                        gain.connect(ctx.destination);
+                        osc.frequency.value = freq;
+                        osc.type = 'sine';
+                        gain.gain.setValueAtTime(0.18, ctx.currentTime + i * 0.12);
+                        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.12 + 0.3);
+                        osc.start(ctx.currentTime + i * 0.12);
+                        osc.stop(ctx.currentTime + i * 0.12 + 0.35);
+                    });
+                } catch(e) { /* Audio not critical */ }
+            });
+        }
+    </script>
+</body>
+</html>

@@ -1,5 +1,6 @@
 flask
 pymongo[srv]
+flask-pymongo
 flask-mail
 cloudinary
 python-dotenv
