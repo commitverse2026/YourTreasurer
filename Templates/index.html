@@ -35,8 +35,47 @@
 
     <div class="main-layout-wrapper">
         <div class="content-container">
-            <h1 class="title">YourTreasurer</h1>
-            <p class="subtitle">Smart Spending for Smart Ones</p>
+            {% if user %}
+                <div class="budget-overview">
+                    <h1 class="title">YourTreasurer</h1>
+                    <p class="subtitle">Smart Spending for Smart Ones</p>
+                    
+                    <div class="progress-container">
+                        <div class="progress-info">
+                            <span class="progress-label">Monthly Budget Progress</span>
+                            <span class="progress-percentage">{{ "%.1f" | format(progress_percentage) }}%</span>
+                        </div>
+                        <div class="progress-bar-container">
+                            <div class="progress-bar" id="progressBar" style="width: {{ progress_percentage }}%; background-color: {% if progress_percentage < 70 %}#28a745{% elif progress_percentage < 90 %}#ffc107{% else %}#dc3545{% endif %};"></div>
+                        </div>
+                        <div class="budget-details">
+                            <span>Spent: Rs{{ total_spent }}</span>
+                            <span>Budget: Rs{{ user.monthly_limit }}</span>
+                            <span>Remaining: Rs{{ user.monthly_limit - total_spent }}</span>
+                        </div>
+                    </div>
+                    
+                    {% if today_expenses %}
+                        <div class="today-expenses">
+                            <h3>Today's Expenses</h3>
+                            {% for expense in today_expenses %}
+                                <div class="expense-item">
+                                    <span class="expense-category">{{ expense.category }}</span>
+                                    <span class="expense-amount">Rs{{ expense.amount }}</span>
+                                    <span class="expense-description">{{ expense.description }}</span>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+            {% else %}
+                <h1 class="title">YourTreasurer</h1>
+                <p class="subtitle">Smart Spending for Smart Ones</p>
+                <div class="login-prompt">
+                    <p>Please set up your profile to start tracking your expenses.</p>
+                    <a href="/my_profile" class="cta-button">Get Started</a>
+                </div>
+            {% endif %}
         </div>
     </div>
     
@@ -88,6 +127,66 @@
         menuBtn.addEventListener('click', toggleMenu);
         closeBtn.addEventListener('click', toggleMenu);
         backdrop.addEventListener('click', toggleMenu);
+        
+        // --- Real-time Progress Bar Updates ---
+        function updateProgressBar() {
+            fetch('/api/progress_data')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) return;
+                    
+                    const progressBar = document.getElementById('progressBar');
+                    const progressPercentage = document.querySelector('.progress-percentage');
+                    const spentElement = document.querySelector('.budget-details span:nth-child(1)');
+                    const budgetElement = document.querySelector('.budget-details span:nth-child(2)');
+                    const remainingElement = document.querySelector('.budget-details span:nth-child(3)');
+                    
+                    // Update progress bar
+                    const percentage = Math.min(data.progress_percentage, 100);
+                    progressBar.style.width = percentage + '%';
+                    
+                    // Update color based on percentage
+                    let color;
+                    if (percentage < 70) {
+                        color = '#28a745'; // Green
+                    } else if (percentage < 90) {
+                        color = '#ffc107'; // Yellow
+                    } else {
+                        color = '#dc3545'; // Red
+                    }
+                    progressBar.style.backgroundColor = color;
+                    
+                    // Update text
+                    progressPercentage.textContent = percentage.toFixed(1) + '%';
+                    spentElement.textContent = 'Spent: Rs' + data.total_spent.toFixed(2);
+                    budgetElement.textContent = 'Budget: Rs' + data.monthly_limit.toFixed(2);
+                    remainingElement.textContent = 'Remaining: Rs' + data.remaining.toFixed(2);
+                    
+                    // Add pulse animation for high usage
+                    if (percentage >= 90) {
+                        progressBar.style.animation = 'pulse 2s infinite';
+                    } else {
+                        progressBar.style.animation = '';
+                    }
+                })
+                .catch(error => console.error('Progress update error:', error));
+        }
+        
+        // Update progress bar every 5 seconds
+        setInterval(updateProgressBar, 5000);
+        
+        // Initial update
+        updateProgressBar();
+        
+        // Add pulse animation style
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes pulse {
+                0%, 100% { opacity: 1; }
+                50% { opacity: 0.7; }
+            }
+        `;
+        document.head.appendChild(style);
     </script>
 </body>
 </html>

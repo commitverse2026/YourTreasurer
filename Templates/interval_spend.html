@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YourTreasurer | Interval Spend</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        .interval-container {
+            max-width: 800px;
+            margin: 100px auto 80px;
+            padding: 20px;
+        }
+        
+        .page-title {
+            text-align: center;
+            margin-bottom: 30px;
+            color: var(--navy-dark);
+            font-size: 2.5rem;
+            font-weight: 800;
+        }
+        
+        .interval-form {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 20px 60px rgba(15, 40, 84, 0.15);
+            backdrop-filter: blur(10px);
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--navy-dark);
+        }
+        
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid var(--blue-light);
+            border-radius: 8px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+        
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: var(--blue-mid);
+            box-shadow: 0 0 0 3px rgba(28, 77, 141, 0.1);
+        }
+        
+        .btn-primary {
+            background: var(--navy-dark);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary:hover {
+            background: var(--blue-mid);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(15, 40, 84, 0.2);
+        }
+        
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-danger:hover {
+            background: #c82333;
+        }
+        
+        .interval-list {
+            margin-top: 30px;
+        }
+        
+        .interval-card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 10px 30px rgba(15, 40, 84, 0.1);
+            animation: slideInFromBottom 0.5s ease;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+        
+        .interval-card.due-soon {
+            border: 3px solid #dc3545;
+            animation: glowRed 2s ease-in-out infinite;
+        }
+        
+        @keyframes glowRed {
+            0%, 100% { 
+                box-shadow: 0 10px 30px rgba(15, 40, 84, 0.1), 0 0 20px rgba(220, 53, 69, 0.6);
+            }
+            50% { 
+                box-shadow: 0 10px 30px rgba(15, 40, 84, 0.1), 0 0 40px rgba(220, 53, 69, 0.8);
+            }
+        }
+        
+        @keyframes slideInFromBottom {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .interval-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .interval-amount {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--navy-dark);
+        }
+        
+        .interval-type {
+            background: var(--blue-light);
+            color: var(--navy-dark);
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+        
+        .interval-details {
+            color: var(--blue-mid);
+            font-size: 0.9rem;
+            margin-bottom: 10px;
+        }
+        
+        .interval-actions {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .due-badge {
+            background: #dc3545;
+            color: white;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            margin-left: 10px;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.6; }
+            100% { opacity: 1; }
+        }
+        
+        .alert {
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+        
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .alert-danger {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .reminder-info {
+            background: #fff3cd;
+            color: #856404;
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 10px;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="brand-logo-top">
+        <img src="{{ url_for('static', filename='images/logo.png') }}" alt="YourTreasurer Logo">
+    </div>
+
+    <button class="menu-trigger" id="menu-btn">
+        <span>&#216; Menu</span>
+    </button>
+
+    <div class="menu-backdrop" id="menu-backdrop"></div>
+
+    <nav id="side-nav" class="side-nav">
+        <button class="close-btn" id="close-btn">&times;</button>
+        <div class="nav-links">
+            <a href="/" data-bg="{{ url_for('static', filename='images/bg.svg') }}">Home</a>
+            <a href="/my_profile" data-bg="{{ url_for('static', filename='images/profile.jpg') }}">My Profile</a>
+            <a href="/my_expenses" data-bg="{{ url_for('static', filename='images/expenses.avif') }}">My Expenses</a>
+            <a href="/analysis" data-bg="{{ url_for('static', filename='images/Analysis.jpg') }}">Analysis</a>
+            <a href="/interval_spend" data-bg="{{ url_for('static', filename='images/interval.jpg') }}">Interval Spend</a>
+            <a href="/about_us" data-bg="{{ url_for('static', filename='images/aboutus.png') }}">About Us</a>
+        </div>
+    </nav>
+
+    <div id="dynamic-bg" class="dynamic-bg" style="background-image: url('{{ url_for('static', filename='images/bg.svg') }}');"></div>
+    <div id="hover-bg" class="dynamic-bg hover-layer"></div>
+
+    <div class="interval-container">
+        <h1 class="page-title">Interval Spend Manager</h1>
+        
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <div class="interval-form">
+            <form method="POST" action="/add_interval_spend">
+                <div class="form-group">
+                    <label for="payment_type">Payment Type</label>
+                    <select id="payment_type" name="payment_type" required>
+                        <option value="">Select Type</option>
+                        <option value="EMI">EMI</option>
+                        <option value="Hostel Rent">Hostel Rent</option>
+                        <option value="Subscription">Subscription</option>
+                        <option value="Mess Fee">Mess Fee</option>
+                        <option value="Other">Other Recurring</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="amount">Amount (Rs)</label>
+                    <input type="number" id="amount" name="amount" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="description">Description</label>
+                    <input type="text" id="description" name="description" placeholder="What is this payment for?" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="due_date">Due Date</label>
+                    <input type="date" id="due_date" name="due_date" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="reminder_days">Remind me (days before due)</label>
+                    <select id="reminder_days" name="reminder_days" required>
+                        <option value="1">1 day before</option>
+                        <option value="3">3 days before</option>
+                        <option value="7">1 week before</option>
+                        <option value="14">2 weeks before</option>
+                        <option value="30">1 month before</option>
+                    </select>
+                </div>
+                
+                <button type="submit" class="btn-primary">Add Interval Payment</button>
+            </form>
+        </div>
+
+        <div class="interval-list">
+            <h2 style="margin-bottom: 20px; color: var(--navy-dark);">Upcoming Payments</h2>
+            {% if payments %}
+                {% for payment in payments %}
+                    <div class="interval-card {% if payment.days_until_due <= 3 %}due-soon{% endif %}">
+                        <div class="interval-header">
+                            <div>
+                                <span class="interval-amount">Rs{{ payment.amount }}</span>
+                                <span class="interval-type">{{ payment.payment_type }}</span>
+                                {% if payment.days_until_due <= 3 %}
+                                    <span class="due-badge">Due Soon!</span>
+                                {% endif %}
+                            </div>
+                            <div class="interval-actions">
+                                <button class="btn-danger" onclick="deletePayment('{{ payment._id }}')">Delete</button>
+                            </div>
+                        </div>
+                        <div class="interval-details">
+                            {{ payment.description }} | Due: {{ payment.due_date.strftime('%d %b %Y') }}
+                            {% if payment.days_until_due > 0 %}
+                                | {{ payment.days_until_due }} days remaining
+                            {% elif payment.days_until_due == 0 %}
+                                | Due Today!
+                            {% else %}
+                                | {{ payment.days_until_due * -1 }} days overdue
+                            {% endif %}
+                        </div>
+                        <div class="reminder-info">
+                            Reminder set: {{ payment.reminder_days }} days before due date
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <p style="text-align: center; color: var(--blue-mid); padding: 40px;">No interval payments yet. Add your recurring expenses!</p>
+            {% endif %}
+        </div>
+    </div>
+    
+    <footer class="common-footer">
+        YourTreasurer &copy; 2026 | Helping Hand
+    </footer>
+
+    <script>
+        const menuBtn = document.getElementById('menu-btn');
+        const closeBtn = document.getElementById('close-btn');
+        const sideNav = document.getElementById('side-nav');
+        const backdrop = document.getElementById('menu-backdrop');
+        
+        const mainBg = document.getElementById('dynamic-bg');
+        const hoverBg = document.getElementById('hover-bg');
+        const navLinks = document.querySelectorAll('.nav-links a');
+        
+        // Set default background
+        const defaultBg = "{{ url_for('static', filename='images/bg.svg') }}";
+        mainBg.style.backgroundImage = `url(${defaultBg})`;
+
+        function toggleMenu() {
+            sideNav.classList.toggle('open');
+            backdrop.classList.toggle('active');
+            if (sideNav.classList.contains('open')) {
+                document.body.style.position = 'fixed';
+                document.body.style.width = '100%';
+            } else {
+                document.body.style.position = '';
+                hoverBg.style.opacity = '0';
+            }
+        }
+
+        navLinks.forEach(link => {
+            link.addEventListener('mouseenter', () => {
+                const newImg = link.getAttribute('data-bg');
+                hoverBg.style.backgroundImage = `url(${newImg})`;
+                hoverBg.style.opacity = '1';
+            });
+
+            link.addEventListener('mouseleave', () => {
+                hoverBg.style.opacity = '0';
+            });
+        });
+
+        menuBtn.addEventListener('click', toggleMenu);
+        closeBtn.addEventListener('click', toggleMenu);
+        backdrop.addEventListener('click', toggleMenu);
+
+        // Delete payment
+        function deletePayment(paymentId) {
+            if (confirm('Are you sure you want to delete this interval payment?')) {
+                fetch(`/delete_interval_payment/${paymentId}`, {
+                    method: 'DELETE'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Failed to delete payment');
+                });
+            }
+        }
+
+        // Set minimum date to today
+        document.getElementById('due_date').min = new Date().toISOString().split('T')[0];
+    </script>
+</body>
+</html>

@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YourTreasurer | Analysis</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .analysis-container {
+            max-width: 1200px;
+            margin: 100px auto 80px;
+            padding: 20px;
+        }
+        
+        .page-title {
+            text-align: center;
+            margin-bottom: 30px;
+            color: var(--navy-dark);
+            font-size: 2.5rem;
+            font-weight: 800;
+        }
+        
+        .chart-controls {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .toggle-btn {
+            background: var(--navy-dark);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 0 10px;
+        }
+        
+        .toggle-btn.active {
+            background: var(--blue-mid);
+            transform: scale(1.05);
+        }
+        
+        .toggle-btn:hover {
+            background: var(--blue-mid);
+            transform: translateY(-2px);
+        }
+        
+        .charts-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+        
+        .chart-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(15, 40, 84, 0.15);
+            backdrop-filter: blur(10px);
+        }
+        
+        .chart-title {
+            text-align: center;
+            margin-bottom: 20px;
+            color: var(--navy-dark);
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+        
+        .chart-wrapper {
+            position: relative;
+            height: 300px;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+        
+        .stat-card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(15, 40, 84, 0.1);
+            backdrop-filter: blur(10px);
+            transition: transform 0.3s ease;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--navy-dark);
+            margin-bottom: 5px;
+        }
+        
+        .stat-label {
+            color: var(--blue-mid);
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+        
+        @media (max-width: 768px) {
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="brand-logo-top">
+        <img src="{{ url_for('static', filename='images/logo.png') }}" alt="YourTreasurer Logo">
+    </div>
+
+    <button class="menu-trigger" id="menu-btn">
+        <span>&Oslash; Menu</span>
+    </button>
+
+    <div class="menu-backdrop" id="menu-backdrop"></div>
+
+    <nav id="side-nav" class="side-nav">
+        <button class="close-btn" id="close-btn">&times;</button>
+        <div class="nav-links">
+            <a href="/" data-bg="{{ url_for('static', filename='images/bg.svg') }}">Home</a>
+            <a href="/my_profile" data-bg="{{ url_for('static', filename='images/profile.jpg') }}">My Profile</a>
+            <a href="/my_expenses" data-bg="{{ url_for('static', filename='images/expenses.avif') }}">My Expenses</a>
+            <a href="/analysis" data-bg="{{ url_for('static', filename='images/Analysis.jpg') }}">Analysis</a>
+            <a href="/interval_spend" data-bg="{{ url_for('static', filename='images/interval.jpg') }}">Interval Spend</a>
+            <a href="/about_us" data-bg="{{ url_for('static', filename='images/aboutus.png') }}">About Us</a>
+        </div>
+    </nav>
+
+    <div id="dynamic-bg" class="dynamic-bg" style="background-image: url('{{ url_for('static', filename='images/bg.svg') }}');"></div>
+    <div id="hover-bg" class="dynamic-bg hover-layer"></div>
+
+    <div class="analysis-container">
+        <h1 class="page-title">Spending Analysis</h1>
+        
+        <div class="chart-controls">
+            <button class="toggle-btn active" id="dayViewBtn">Day View</button>
+            <button class="toggle-btn" id="monthViewBtn">Month View</button>
+        </div>
+
+        <div class="charts-grid">
+            <div class="chart-container">
+                <h2 class="chart-title">Category Distribution</h2>
+                <div class="chart-wrapper">
+                    <canvas id="doughnutChart"></canvas>
+                </div>
+            </div>
+            
+            <div class="chart-container">
+                <h2 class="chart-title" id="trendTitle">Today's Spending Trend</h2>
+                <div class="chart-wrapper">
+                    <canvas id="lineChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value" id="totalSpent">0</div>
+                <div class="stat-label">Total Spent</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="avgDaily">0</div>
+                <div class="stat-label">Daily Average</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="highestCategory">-</div>
+                <div class="stat-label">Highest Category</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="transactionCount">0</div>
+                <div class="stat-label">Transactions</div>
+            </div>
+        </div>
+    </div>
+    
+    <footer class="common-footer">
+        YourTreasurer &copy; 2026 | Helping Hand
+    </footer>
+
+    <script>
+        const menuBtn = document.getElementById('menu-btn');
+        const closeBtn = document.getElementById('close-btn');
+        const sideNav = document.getElementById('side-nav');
+        const backdrop = document.getElementById('menu-backdrop');
+        
+        const mainBg = document.getElementById('dynamic-bg');
+        const hoverBg = document.getElementById('hover-bg');
+        const navLinks = document.querySelectorAll('.nav-links a');
+        
+        // Set default background
+        const defaultBg = "{{ url_for('static', filename='images/bg.svg') }}";
+        mainBg.style.backgroundImage = `url(${defaultBg})`;
+
+        function toggleMenu() {
+            sideNav.classList.toggle('open');
+            backdrop.classList.toggle('active');
+            if (sideNav.classList.contains('open')) {
+                document.body.style.position = 'fixed';
+                document.body.style.width = '100%';
+            } else {
+                document.body.style.position = '';
+                hoverBg.style.opacity = '0';
+            }
+        }
+
+        navLinks.forEach(link => {
+            link.addEventListener('mouseenter', () => {
+                const newImg = link.getAttribute('data-bg');
+                hoverBg.style.backgroundImage = `url(${newImg})`;
+                hoverBg.style.opacity = '1';
+            });
+
+            link.addEventListener('mouseleave', () => {
+                hoverBg.style.opacity = '0';
+            });
+        });
+
+        menuBtn.addEventListener('click', toggleMenu);
+        closeBtn.addEventListener('click', toggleMenu);
+        backdrop.addEventListener('click', toggleMenu);
+
+        // Chart initialization
+        let doughnutChart, lineChart;
+        let currentView = 'day';
+
+        // Initialize charts
+        async function initCharts() {
+            try {
+                const response = await fetch('/api/spend_data');
+                const data = await response.json();
+                
+                // Doughnut Chart
+                const doughnutCtx = document.getElementById('doughnutChart').getContext('2d');
+                doughnutChart = new Chart(doughnutCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: data.categories,
+                        datasets: [{
+                            data: data.amounts,
+                            backgroundColor: [
+                                '#0F2854',
+                                '#1C4D8D',
+                                '#4988C4',
+                                '#BDE8F5',
+                                '#6c757d',
+                                '#ffc107'
+                            ],
+                            borderWidth: 2,
+                            borderColor: '#fff'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    padding: 15,
+                                    font: {
+                                        size: 12,
+                                        weight: '600'
+                                    }
+                                }
+                            }
+                        },
+                        animation: {
+                            animateRotate: true,
+                            animateScale: true,
+                            duration: 1500,
+                            easing: 'easeInOutQuart'
+                        }
+                    }
+                });
+
+                // Line Chart - Day View (default)
+                await updateLineChart('day');
+                
+                // Update stats
+                updateStats(data);
+                
+            } catch (error) {
+                console.error('Error fetching chart data:', error);
+            }
+        }
+
+        async function updateLineChart(view) {
+            try {
+                const response = await fetch(`/api/trend_data?view=${view}`);
+                const data = await response.json();
+                
+                const lineCtx = document.getElementById('lineChart').getContext('2d');
+                
+                if (lineChart) {
+                    lineChart.destroy();
+                }
+                
+                lineChart = new Chart(lineCtx, {
+                    type: 'line',
+                    data: {
+                        labels: data.labels,
+                        datasets: [{
+                            label: 'Spending (Rs)',
+                            data: data.amounts,
+                            borderColor: '#0F2854',
+                            backgroundColor: 'rgba(15, 40, 84, 0.1)',
+                            borderWidth: 3,
+                            fill: true,
+                            tension: 0.4,
+                            pointBackgroundColor: '#0F2854',
+                            pointBorderColor: '#fff',
+                            pointBorderWidth: 2,
+                            pointRadius: 5,
+                            pointHoverRadius: 7
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                grid: {
+                                    color: 'rgba(0, 0, 0, 0.05)'
+                                }
+                            },
+                            x: {
+                                grid: {
+                                    display: false
+                                }
+                            }
+                        },
+                        animation: {
+                            duration: 1000,
+                            easing: 'easeInOutQuart'
+                        }
+                    }
+                });
+                
+                // Update title
+                document.getElementById('trendTitle').textContent = 
+                    view === 'day' ? "Today's Spending Trend" : "30-Day Spending Trend";
+                    
+            } catch (error) {
+                console.error('Error updating line chart:', error);
+            }
+        }
+
+        function updateStats(data) {
+            const totalSpent = data.amounts.reduce((a, b) => a + b, 0);
+            const avgDaily = totalSpent / 30; // Assuming 30 days
+            const maxAmount = Math.max(...data.amounts);
+            const highestCategoryIndex = data.amounts.indexOf(maxAmount);
+            const highestCategory = data.categories[highestCategoryIndex];
+            const transactionCount = data.amounts.length;
+            
+            document.getElementById('totalSpent').textContent = `Rs${totalSpent}`;
+            document.getElementById('avgDaily').textContent = `Rs${avgDaily.toFixed(0)}`;
+            document.getElementById('highestCategory').textContent = highestCategory;
+            document.getElementById('transactionCount').textContent = transactionCount;
+        }
+
+        // Toggle buttons
+        document.getElementById('dayViewBtn').addEventListener('click', function() {
+            if (currentView !== 'day') {
+                currentView = 'day';
+                this.classList.add('active');
+                document.getElementById('monthViewBtn').classList.remove('active');
+                updateLineChart('day');
+            }
+        });
+
+        document.getElementById('monthViewBtn').addEventListener('click', function() {
+            if (currentView !== 'month') {
+                currentView = 'month';
+                this.classList.add('active');
+                document.getElementById('dayViewBtn').classList.remove('active');
+                updateLineChart('month');
+            }
+        });
+
+        // Initialize on load
+        document.addEventListener('DOMContentLoaded', initCharts);
+    </script>
+</body>
+</html>

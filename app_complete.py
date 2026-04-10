@@ -29,16 +29,8 @@ cloudinary.config(
 
 # 2. MongoDB & Mail Setup
 # TODO for Participants: Insert your free MongoDB Atlas URI here
-app.config["MONGO_URI"] = "mongodb+srv://dummyworld36_db_user:39zxLuQg1hIELacU@cluster0.6rfqi8c.mongodb.net/yourtreasurer?retryWrites=true&w=majority"
-
-try:
-    mongo = PyMongo(app)
-    # Test connection
-    mongo.db.command('ping')
-    print("MongoDB connected successfully!")
-except Exception as e:
-    print(f"MongoDB connection error: {e}")
-    mongo = None
+app.config["MONGO_URI"] = "mongodb+srv://dummyworld36_db_user:39zxLuQg1hIELacU@cluster0.6rfqi8c.mongodb.net/"
+mongo = PyMongo(app)
 
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 587
@@ -188,11 +180,6 @@ def about_us():
 def setup_profile():
     """Handle user profile setup and login"""
     try:
-        # Check MongoDB connection
-        if mongo is None:
-            flash('Database connection error. Please check your MongoDB configuration.', 'danger')
-            return redirect(url_for('my_profile'))
-        
         name = request.form['name']
         password = request.form['password']
         monthly_limit = float(request.form['monthly_limit'])
@@ -527,33 +514,6 @@ def spend_data():
     except Exception as e:
         print(f"API Error: {e}")
         return jsonify({'categories': [], 'amounts': []})
-
-@app.route('/api/progress_data')
-@login_required
-def progress_data():
-    """API endpoint for real-time progress bar data"""
-    try:
-        user = mongo.db.users.find_one({'_id': ObjectId(session['user_id'])})
-        
-        # Calculate total spent
-        total_spent = 0
-        expenses = mongo.db.daily_expenses.find({'username': user['name']})
-        for expense in expenses:
-            total_spent += expense['amount']
-        
-        # Calculate progress percentage
-        progress_percentage = (total_spent / user['monthly_limit']) * 100 if user['monthly_limit'] > 0 else 0
-        
-        return jsonify({
-            'total_spent': total_spent,
-            'monthly_limit': user['monthly_limit'],
-            'progress_percentage': progress_percentage,
-            'remaining': user['monthly_limit'] - total_spent
-        })
-        
-    except Exception as e:
-        print(f"Progress API Error: {e}")
-        return jsonify({'error': 'Failed to fetch progress data'})
 
 @app.route('/api/trend_data')
 @login_required
