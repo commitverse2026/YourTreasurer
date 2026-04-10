@@ -1,93 +1,45 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>YourTreasurer | Home</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
+    <title>Dashboard</title>
 </head>
 <body>
-    <div class="brand-logo-top">
-        <img src="{{ url_for('static', filename='images/logo.png') }}" alt="YourTreasurer Logo">
+    <div class="nav">
+        <h2>💰 Treasurer</h2>
+        {% if user %}<a href="/logout">Logout</a>{% else %}<a href="/login">Login</a>{% endif %}
     </div>
 
-    <button class="menu-trigger" id="menu-btn">
-        <span>☰ Menu</span>
-    </button>
-
-    <div class="menu-backdrop" id="menu-backdrop"></div>
-
-     <nav id="side-nav" class="side-nav">
-        <button class="close-btn" id="close-btn">&times;</button>
-        <div class="nav-links">
-            <a href="/" data-bg="{{ url_for('static', filename='images/bg.svg') }}">Home</a>
-            <a href="/my_profile" data-bg="{{ url_for('static', filename='images/profile.jpg') }}">My Profile</a>
-            <a href="/my_expenses" data-bg="{{ url_for('static', filename='images/expenses.avif') }}">My Expenses</a>
-            <a href="/analysis" data-bg="{{ url_for('static', filename='images/Analysis.jpg') }}">Analysis</a>
-            <a href="/interval_spend" data-bg="{{ url_for('static', filename='images/interval.jpg') }}">Interval Spend</a>
-            <a href="/about_us" data-bg="{{ url_for('static', filename='images/aboutus.png') }}">About Us</a>
+    <div class="container">
+        <div class="card" style="text-align: center;">
+            <h3>Monthly Spending</h3>
+            <div class="progress-container">
+                <div class="progress-bar" id="bar"></div>
+            </div>
+            <h2 id="text">₹0 / ₹0</h2>
+            <p id="status-msg" style="font-size: 0.9rem; color: #94a3b8;"></p>
         </div>
-    </nav>
 
-    <div id="dynamic-bg" class="dynamic-bg" style="background-image: url('{{ url_for('static', filename='images/bg.svg') }}');"></div>
-    <div id="hover-bg" class="dynamic-bg hover-layer"></div>
-
-    <div class="main-layout-wrapper">
-        <div class="content-container">
-            <h1 class="title">YourTreasurer</h1>
-            <p class="subtitle">Smart Spending for Smart Ones</p>
-        </div>
+        <a href="/my_expenses" class="btn" style="display: block; text-align: center; text-decoration: none;">View All Expenses</a>
     </div>
-    
-    <footer class="common-footer">
-        YourTreasurer &copy; 2026 | Helping Hand
-    </footer>
 
-   
-<script>
-        const menuBtn = document.getElementById('menu-btn');
-        const closeBtn = document.getElementById('close-btn');
-        const sideNav = document.getElementById('side-nav');
-        const backdrop = document.getElementById('menu-backdrop');
-        
-        const mainBg = document.getElementById('dynamic-bg');
-        const hoverBg = document.getElementById('hover-bg');
-        const navLinks = document.querySelectorAll('.nav-links a');
-        
-        // Set default background
-        const defaultBg = "{{ url_for('static', filename='images/bg.svg') }}";
-        mainBg.style.backgroundImage = `url(${defaultBg})`;
+    <script>
+        function load(){
+            fetch('/api/progress').then(r=>r.json()).then(d=>{
+                let p = d.progress > 100 ? 100 : d.progress;
+                let bar = document.getElementById("bar");
+                bar.style.width = p + "%";
 
-        function toggleMenu() {
-            sideNav.classList.toggle('open');
-            backdrop.classList.toggle('active');
-            if (sideNav.classList.contains('open')) {
-                document.body.style.position = 'fixed';
-                document.body.style.width = '100%';
-            } else {
-                document.body.style.position = '';
-                // Reset bg when menu closes
-                hoverBg.style.opacity = '0';
-            }
+                if(p < 60) bar.style.background = "#22c55e";
+                else if(p < 85) bar.style.background = "#f59e0b";
+                else bar.style.background = "#ef4444";
+
+                document.getElementById("text").innerHTML = `₹${d.spent} / ₹${d.limit}`;
+                document.getElementById("status-msg").innerHTML = `${d.progress.toFixed(1)}% of budget used`;
+            });
         }
-
-        // --- Hover Animation Logic ---
-        navLinks.forEach(link => {
-            link.addEventListener('mouseenter', () => {
-                const newImg = link.getAttribute('data-bg');
-                hoverBg.style.backgroundImage = `url(${newImg})`;
-                hoverBg.style.opacity = '1';
-            });
-
-            link.addEventListener('mouseleave', () => {
-                hoverBg.style.opacity = '0';
-            });
-        });
-
-        menuBtn.addEventListener('click', toggleMenu);
-        closeBtn.addEventListener('click', toggleMenu);
-        backdrop.addEventListener('click', toggleMenu);
+        load();
+        setInterval(load, 5000);
     </script>
 </body>
 </html>

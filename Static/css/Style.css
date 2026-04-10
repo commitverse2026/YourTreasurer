@@ -1,230 +1,100 @@
-/* --- 1. GLOBAL VARIABLES & THEME --- */
 :root {
-    --navy-dark: #0F2854;
-    --blue-mid: #1C4D8D;
-    --blue-soft: #4988C4;
-    --blue-light: #BDE8F5;
-    --transition-smooth: all 0.4s cubic-bezier(0.77, 0, 0.175, 1);
+    --bg: #0f172a;
+    --card-bg: #1e293b;
+    --text: #f8fafc;
+    --accent: #38bdf8;
+    --success: #22c55e;
+    --warning: #f59e0b;
+    --danger: #ef4444;
 }
 
-* {
+body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background-color: var(--bg);
+    color: var(--text);
     margin: 0;
-    padding: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.container {
+    width: 90%;
+    max-width: 500px;
+    margin-top: 50px;
+}
+
+.nav {
+    width: 100%;
+    padding: 1rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--card-bg);
     box-sizing: border-box;
 }
 
-body, html {
-    height: 100%;
-    width: 100%;
-    font-family: 'Poppins', sans-serif;
-    background-color: var(--blue-light); /* Base Fallback */
-    color: var(--navy-dark);
-    overflow: hidden; 
-}
-
-/* --- 2. DYNAMIC BACKGROUND LAYERS --- */
-/* This layer holds your bg.svg */
-.dynamic-bg {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    z-index: -3; /* Bottom Layer */
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
-    background-color: var(--blue-light);
-}
-
-/* The Empulse Fade Layer for Menu Hovers */
-.hover-layer {
-    z-index: -2; /* Sits above bg.svg but below content */
-    opacity: 0;
-    transition: opacity 0.5s ease-in-out;
-    background-image: none;
-}
-
-/* --- 3. THE LIGHT SCREEN ANIMATION (The Shimmer) --- */
-/* This creates the moving light WITHOUT hiding the SVG */
-.dynamic-bg::after {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    /* Very subtle white beam at 0.12 opacity */
-    background: linear-gradient(
-        125deg,
-        rgba(255, 255, 255, 0) 35%,
-        rgba(255, 255, 255, 0.12) 50%, 
-        rgba(255, 255, 255, 0) 65%
-    );
-    background-size: 300% 300%;
-    animation: lightSweep 12s ease-in-out infinite;
-    pointer-events: none;
-    z-index: 10; /* Sits on top of the image in the same div */
-}
-
-@keyframes lightSweep {
-    0%, 100% { background-position: 0% 0%; }
-    50% { background-position: 100% 100%; }
-}
-
-/* --- 4. HEADER BRANDING & MENU --- */
-.brand-logo-top {
-    position: fixed;
-    top: 15px;
-    left: 20px;
-    z-index: 100;
-}
-
-.brand-logo-top img {
-    width: clamp(50px, 8vw, 75px);
-    height: auto;
-    filter: drop-shadow(0px 4px 10px rgba(0,0,0,0.1));
-}
-
-.menu-trigger {
-    position: fixed;
-    top: 15px;
-    right: 20px;
-    z-index: 1000;
-    background: var(--navy-dark);
-    color: white;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 50px;
-    font-weight: 600;
-    cursor: pointer;
-    box-shadow: 0 4px 15px rgba(15, 40, 84, 0.2);
-    transition: transform 0.2s ease;
-}
-
-.menu-trigger:hover { transform: scale(1.05); }
-
-/* --- 5. SIDE NAVIGATION --- */
-.side-nav {
-    height: 100vh;
-    width: 85%;
-    max-width: 350px;
-    position: fixed;
-    top: 0;
-    right: -100%; 
-    background: var(--navy-dark);
-    z-index: 1001;
-    transition: right 0.5s cubic-bezier(0.77, 0, 0.175, 1);
-    box-shadow: -10px 0 30px rgba(0,0,0,0.4);
-}
-
-.side-nav.open { right: 0; }
-
-.nav-links {
-    display: flex;
-    flex-direction: column;
-    padding: 100px 40px;
-    gap: 20px;
-}
-
-.nav-links a {
-    color: white;
+.nav a {
+    color: var(--accent);
     text-decoration: none;
-    font-size: 1.4rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    transition: var(--transition-smooth);
-    opacity: 0.6;
+    font-weight: bold;
 }
 
-.nav-links a:hover {
-    opacity: 1;
-    transform: translateX(12px);
-    color: var(--blue-light);
-}
-
-.close-btn {
-    background: none;
-    border: none;
-    color: white;
-    font-size: 3rem;
-    position: absolute;
-    top: 15px;
-    right: 25px;
-    cursor: pointer;
-}
-
-.menu-backdrop {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(15, 40, 84, 0.5);
-    backdrop-filter: blur(8px);
-    z-index: 900;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.5s;
-}
-
-.menu-backdrop.active { opacity: 1; pointer-events: all; }
-
-/* --- 6. CENTER CONTENT --- */
-.main-layout-wrapper {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-    width: 100%;
+.card {
+    background: var(--card-bg);
     padding: 20px;
-    text-align: center;
-    z-index: 5;
+    border-radius: 16px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
 
-.content-container {
-    animation: float 5s ease-in-out infinite;
-}
-
-.title {
-    font-size: clamp(2.5rem, 12vw, 6.5rem);
-    color: var(--navy-dark);
-    font-weight: 800;
-    line-height: 0.85;
-    letter-spacing: -3px;
-    margin: 0;
-}
-
-.subtitle {
-    font-size: clamp(0.9rem, 4vw, 1.4rem);
-    color: var(--blue-mid);
-    margin-top: 10px;
-    font-weight: 500;
-}
-
-@keyframes float {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-12px); }
-}
-
-/* --- 7. FOOTER --- */
-.common-footer {
-    position: fixed;
-    bottom: 0;
+/* Forms & Inputs */
+input, select, textarea {
     width: 100%;
-    text-align: center;
-    padding: 15px;
-    background: var(--navy-dark);
+    padding: 12px;
+    margin: 10px 0;
+    border-radius: 8px;
+    border: 1px solid #334155;
+    background: #0f172a;
     color: white;
-    font-size: 0.75rem;
-    letter-spacing: 1px;
-    z-index: 10;
+    box-sizing: border-box;
 }
 
-/* --- 8. TABLET & LAPTOP ADJUSTMENTS --- */
-@media (min-width: 768px) {
-    .nav-links a { font-size: 1.8rem; }
-    .side-nav { width: 350px; }
-    .common-footer { font-size: 0.85rem; }
+.btn {
+    width: 100%;
+    padding: 12px;
+    background: var(--accent);
+    border: none;
+    border-radius: 8px;
+    color: var(--bg);
+    font-weight: bold;
+    cursor: pointer;
+    transition: transform 0.2s;
 }
+
+.btn:hover { transform: translateY(-2px); opacity: 0.9; }
+
+/* Progress Bar */
+.progress-container {
+    background: #334155;
+    border-radius: 20px;
+    height: 12px;
+    overflow: hidden;
+    margin: 15px 0;
+}
+
+.progress-bar {
+    height: 100%;
+    width: 0%;
+    transition: width 0.5s ease-in-out, background-color 0.5s;
+}
+
+.loan-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #334155;
+    padding: 10px 0;
+}
+
+.loan-item:last-child { border: 0; }

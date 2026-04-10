@@ -51,6 +51,8 @@ def build_mongo_uri_with_timeouts(raw_uri):
         )
     )
 
+app = Flask(__name__)
+app.secret_key = "secret123"
 
 raw_mongo_uri = os.environ.get("MONGO_URI", "mongodb://localhost:27017/yourtreasurer")
 app.config["MONGO_URI"] = build_mongo_uri_with_timeouts(raw_mongo_uri)
@@ -389,7 +391,8 @@ def about_us():
 
 # --- LOGIN/SIGNUP ROUTES ---
 
-@app.route("/login", methods=["POST"])
+# ---------------- LOGIN ---------------- #
+@app.route('/login', methods=['GET','POST'])
 def login():
     payload = request.get_json(silent=True) or request.form
     name = (payload.get("name") or "").strip()
@@ -507,10 +510,7 @@ def signup():
         "redirect_url": url_for("home"),
     })
 
-@app.route("/logout", methods=["POST"])
-def logout():
-    session.clear()
-    return jsonify({"success": True, "message": "Logged out."})
+    return render_template("profile.html")
 
 # ==================== REAL-TIME SPEND HISTORY ====================
 
@@ -771,6 +771,16 @@ def check_upcoming_payments():
 
 # ==================== OTHER API ROUTES ====================
 
+# ---------------- EXPENSE PAGE ---------------- #
+@app.route('/my_expenses')
+def my_expenses():
+    exp = list(expenses.find({"user": session["user"]}))
+    loan_data = list(loans.find({"user": session["user"]}))
+
+    return render_template("expenses.html", expenses=exp, loans=loan_data)
+
+
+# ---------------- ADD EXPENSE ---------------- #
 @app.route('/add_expense', methods=['POST'])
 def add_expense():
     try:
