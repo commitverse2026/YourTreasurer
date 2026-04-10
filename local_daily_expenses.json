@@ -1,0 +1,62 @@
+[
+  {
+    "category": "Junk Food",
+    "amount": 125.0,
+    "is_loan": false,
+    "friend_email": null,
+    "relationship": null,
+    "created_at": "2026-04-10T07:16:54.274747",
+    "created_by": "Expense Tester",
+    "_id": "95c86809-9c54-45e0-b57a-180018518b63"
+  },
+  {
+    "category": "Lifestyle",
+    "amount": 300.0,
+    "is_loan": true,
+    "friend_email": "friend@example.com",
+    "relationship": "Classmate",
+    "created_at": "2026-04-10T07:16:54.279388",
+    "created_by": "Expense Tester",
+    "_id": "16923e7c-7dd8-4cff-8d2b-6aecb3be61c4"
+  },
+  {
+    "category": "Educational",
+    "amount": 25000.0,
+    "is_loan": false,
+    "friend_email": null,
+    "relationship": null,
+    "created_at": "2026-04-10T07:18:34.324208",
+    "created_by": "Durvesh",
+    "_id": "658b7f50-826a-4b04-9966-acddced3a9dc"
+  },
+  {
+    "category": "Lifestyle",
+    "amount": 1000.0,
+    "is_loan": false,
+    "friend_email": null,
+    "relationship": null,
+    "created_at": "2026-04-10T07:18:57.463751",
+    "created_by": "Durvesh",
+    "_id": "76ab44e1-0a68-45ca-b292-df6390d8418f"
+  },
+  {
+    "category": "Other",
+    "amount": 100000.0,
+    "is_loan": true,
+    "friend_email": "asmi.sutar@cumminscollege.in",
+    "relationship": "friend",
+    "created_at": "2026-04-10T07:19:22.839735",
+    "created_by": "Durvesh",
+    "_id": "f66e65b6-a749-4dcd-992f-c23e6e28ea6a"
+  },
+  {
+    "category": "Junk Food",
+    "amount": 99.0,
+    "is_loan": false,
+    "friend_email": null,
+    "relationship": null,
+    "created_at": "2026-04-10T07:22:03.918386",
+    "created_by": "guest",
+    "_id": "ec346a90-50a0-4a93-96dc-316e13a59693"
+  }
+]

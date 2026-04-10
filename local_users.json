@@ -92,7 +92,15 @@
     "name": "Durvesh",
     "password": "scrypt:32768:8:1$cDIpzhEHX4JDI9YY$d6e44cfbb8ec5372a3b3491f9a558f044de9b2dd32ecfd7eb6aacb9ea87960bbb3c80ed810a3c09d8659b0bba39f08330a30a92abb48265ad11c947a661e914d",
     "monthly_limit": 1200.0,
-    "current_spend": 0.0,
+    "current_spend": 149000.0,
     "start_date": "2026-04-10T07:01:55.210148"
+  },
+  {
+    "_id": "621fa070-c1ae-4908-a764-8ec3d5695b41",
+    "name": "Expense Tester",
+    "password": "scrypt:32768:8:1$wspm6bdAYbxKWN6l$2c60c96a97c10c1659e2e99bfd1f162aac93ffb8e0177041759f6fd035f6a1a4ac9c047833855f210b8fb2cfd43ee5194a11c2510e7ab5a1d37eb0dec5c5a70b",
+    "monthly_limit": 5000.0,
+    "current_spend": 425.0,
+    "start_date": "2026-04-10T07:16:53.869137"
   }
 ]
