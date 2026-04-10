@@ -465,8 +465,61 @@ def logout():
 
 @app.route('/my_expenses')
 def my_expenses():
+
     # TODO: Fetch all expenses from MongoDB, sort by date, and pass to template
     return render_template('expenses.html', datetime=datetime)
+
+    if not session.get("user_id"):
+        return redirect(url_for('home'))
+
+    user_name = session.get("user_name")
+    expenses = []
+
+    if is_mongo_available():
+        try:
+            expenses = list(daily_expenses_collection().find({"created_by": user_name}).sort("created_at", -1))
+            if not expenses:
+                # Seed dummy expenses
+                dummy_expenses = [
+                    {"category": "Junk Food", "amount": 150.0, "spent_at": "Local Cafe", "is_loan": False, "created_at": datetime.utcnow() - timedelta(days=1), "created_by": user_name},
+                    {"category": "Educational", "amount": 500.0, "spent_at": "Bookstore", "is_loan": False, "created_at": datetime.utcnow() - timedelta(days=2), "created_by": user_name},
+                    {"category": "Healthy Food", "amount": 200.0, "spent_at": "Grocery Store", "is_loan": False, "created_at": datetime.utcnow() - timedelta(days=3), "created_by": user_name},
+                    {"category": "Travelling", "amount": 300.0, "spent_at": "Bus Station", "is_loan": False, "created_at": datetime.utcnow() - timedelta(days=4), "created_by": user_name},
+                    {"category": "Lifestyle", "amount": 250.0, "spent_at": "Clothing Shop", "is_loan": True, "friend_email": "friend@example.com", "relationship": "Classmate", "created_at": datetime.utcnow() - timedelta(days=5), "created_by": user_name},
+                    {"category": "Hostel Rent", "amount": 2000.0, "spent_at": "Hostel Office", "is_loan": False, "created_at": datetime.utcnow() - timedelta(days=6), "created_by": user_name},
+                    {"category": "Junk Food", "amount": 100.0, "spent_at": "Fast Food Joint", "is_loan": False, "created_at": datetime.utcnow() - timedelta(days=7), "created_by": user_name},
+                    {"category": "Other", "amount": 50.0, "spent_at": "Miscellaneous", "is_loan": False, "created_at": datetime.utcnow() - timedelta(days=8), "created_by": user_name},
+                ]
+                daily_expenses_collection().insert_many(dummy_expenses)
+                expenses = list(daily_expenses_collection().find({"created_by": user_name}).sort("created_at", -1))
+            for exp in expenses:
+                exp["_id"] = str(exp["_id"])
+                exp["created_at"] = exp["created_at"].isoformat() if isinstance(exp["created_at"], datetime) else exp["created_at"]
+        except PyMongoError:
+            expenses = []
+    else:
+        # Fallback to local
+        local_expenses = load_local_expenses()
+        expenses = [exp for exp in local_expenses if exp.get("created_by") == user_name]
+        if not expenses:
+            # Seed dummy for local
+            dummy_expenses = [
+                {"_id": str(uuid4()), "category": "Junk Food", "amount": 150.0, "spent_at": "Local Cafe", "is_loan": False, "created_at": (datetime.utcnow() - timedelta(days=1)).isoformat(), "created_by": user_name},
+                {"_id": str(uuid4()), "category": "Educational", "amount": 500.0, "spent_at": "Bookstore", "is_loan": False, "created_at": (datetime.utcnow() - timedelta(days=2)).isoformat(), "created_by": user_name},
+                {"_id": str(uuid4()), "category": "Healthy Food", "amount": 200.0, "spent_at": "Grocery Store", "is_loan": False, "created_at": (datetime.utcnow() - timedelta(days=3)).isoformat(), "created_by": user_name},
+                {"_id": str(uuid4()), "category": "Travelling", "amount": 300.0, "spent_at": "Bus Station", "is_loan": False, "created_at": (datetime.utcnow() - timedelta(days=4)).isoformat(), "created_by": user_name},
+                {"_id": str(uuid4()), "category": "Lifestyle", "amount": 250.0, "spent_at": "Clothing Shop", "is_loan": True, "friend_email": "friend@example.com", "relationship": "Classmate", "created_at": (datetime.utcnow() - timedelta(days=5)).isoformat(), "created_by": user_name},
+                {"_id": str(uuid4()), "category": "Hostel Rent", "amount": 2000.0, "spent_at": "Hostel Office", "is_loan": False, "created_at": (datetime.utcnow() - timedelta(days=6)).isoformat(), "created_by": user_name},
+                {"_id": str(uuid4()), "category": "Junk Food", "amount": 100.0, "spent_at": "Fast Food Joint", "is_loan": False, "created_at": (datetime.utcnow() - timedelta(days=7)).isoformat(), "created_by": user_name},
+                {"_id": str(uuid4()), "category": "Other", "amount": 50.0, "spent_at": "Miscellaneous", "is_loan": False, "created_at": (datetime.utcnow() - timedelta(days=8)).isoformat(), "created_by": user_name},
+            ]
+            local_expenses.extend(dummy_expenses)
+            save_local_expenses(local_expenses)
+            expenses = [exp for exp in local_expenses if exp.get("created_by") == user_name]
+        expenses.sort(key=lambda x: x.get("created_at", ""), reverse=True)
+
+    return render_template('expenses.html', expenses=expenses)
+
 
 @app.route('/analysis')
 def analysis():
